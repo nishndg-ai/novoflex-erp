@@ -1,20 +1,45 @@
+# ==========================
 # Python
+# ==========================
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyd
 
-# Virtual environments
+# SQLite
+*.db
+
+# Virtual Environments
 .venv/
 venv/
 
-# VS Code
-.vscode/
+# ==========================
+# Node / React
+# ==========================
+node_modules/
+dist/
+build/
 
-# Environment variables
+# npm
+npm-debug.log*
+
+# ==========================
+# Environment Variables
+# ==========================
 .env
 
-# macOS
-.DS_Store
+# ==========================
+# VS Code
+# ==========================
+.vscode/
 
+# ==========================
+# Operating System
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
 # Logs
+# ==========================
 *.log

@@ -3,21 +3,21 @@ from fastapi import APIRouter
 router = APIRouter()
 
 @router.post("/login")
-def login(username: str, password: str):
+def login(user: dict):
 
-    if username == "admin" and password == "admin123":
+    print("Login Request:", user)
 
+    username = user.get("username")
+    password = user.get("password")
+
+    if username == "admin" and password == "admin":
         return {
             "success": True,
-            "user": {
-                "name": "Administrator",
-                "role": "Corporate Admin",
-                "company": "NovoFlex Industries Pvt Ltd",
-                "plant": "Head Office"
-            }
+            "token": "NOVOFLEX_DEMO_TOKEN",
+            "name": "Administrator",
         }
 
     return {
         "success": False,
-        "message": "Invalid Username or Password"
+        "message": "Invalid Username or Password",
     }

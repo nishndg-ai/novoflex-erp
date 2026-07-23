@@ -1,0 +1,54 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
+
+    proxy: {
+      "/login": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+      "/runtime": {
+  target: "http://127.0.0.1:8000",
+  changeOrigin: true,
+},
+
+    
+
+      "/companies": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+
+      "/plants": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+
+      "/departments": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+
+      "/uoms": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+
+      "/docs": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+
+      "/openapi.json": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+    },
+  },
+});
