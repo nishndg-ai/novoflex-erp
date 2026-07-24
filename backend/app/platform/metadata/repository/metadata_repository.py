@@ -50,3 +50,6 @@ class MetadataRepository(BaseRepository[MetadataModule]):
             .order_by(MetadataModule.display_order)
             .all()
         )
+
+
+metadata_repository = MetadataRepository()
