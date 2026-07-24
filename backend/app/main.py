@@ -30,7 +30,7 @@ from app.platform.routes import (
 )
 from app.platform.workflow.startup import initialize_workflows
 from app.platform.workflow.router import router as workflow_router
-from app.platform.notification.router import router as notification_router
+from app.platform.notifications.router import router as notification_router
 
 from app.routes.company import router as company_router
 from app.routes.dashboard import router as dashboard_router

@@ -1,0 +1,1 @@
+from app.platform.metadata.routes import router
