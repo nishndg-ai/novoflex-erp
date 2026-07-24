@@ -18,7 +18,7 @@ def seed_company_fields(db: Session):
 
     fields = [
         {
-            "field_name": "company_code",
+            "field_name": "code",
             "display_name": "Company Code",
             "data_type": "string",
             "length": 20,
@@ -27,7 +27,7 @@ def seed_company_fields(db: Session):
             "is_unique": True,
         },
         {
-            "field_name": "company_name",
+            "field_name": "name",
             "display_name": "Company Name",
             "data_type": "string",
             "length": 200,

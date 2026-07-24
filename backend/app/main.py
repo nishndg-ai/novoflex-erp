@@ -38,6 +38,7 @@ from app.routes.department import router as department_router
 from app.routes.plant import router as plant_router
 from app.routes.template import router as template_router
 from app.routes.uom import router as uom_router
+from app.routes.role import router as role_router
 
 
 
@@ -110,6 +111,7 @@ app.include_router(login_router)
 
 app.include_router(dashboard_router)
 app.include_router(company_router)
+app.include_router(role_router)
 app.include_router(plant_router)
 app.include_router(department_router)
 app.include_router(uom_router)

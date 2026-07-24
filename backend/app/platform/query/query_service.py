@@ -1,62 +1,60 @@
 from __future__ import annotations
 
-from app.platform.events import Event, EventRegistry, EventType
-from app.platform.runtime.runtime_engine import RuntimeEngine
+from typing import Any
 
+from sqlalchemy.orm import Session
+
+from .count_builder import CountBuilder
 from .query_engine import QueryEngine
+from .query_result import QueryResult
 
 
 class QueryService:
     """
-    Runtime query service with lifecycle events.
+    Generic runtime query service.
     """
 
-    def __init__(self, db):
+    def __init__(self, db: Session):
         self.db = db
-        self.runtime_engine = RuntimeEngine(db)
-        self.query_engine = QueryEngine(db)
 
-    def list(
+    def execute(
         self,
-        module_code: str,
-        request,
-    ):
+        *,
+        table,
+        filters: dict[str, Any] | None = None,
+        search: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+        order_by: str | None = None,
+        descending: bool = False,
+    ) -> dict[str, Any]:
 
-        runtime = self.runtime_engine.build_runtime(
-            module_code
+        stmt = QueryEngine.build_select(
+            table,
+            filters=filters,
+            search=search,
+            limit=limit,
+            offset=offset,
+            order_by=order_by,
+            descending=descending,
         )
 
-        before_event = Event(
-            event_type=EventType.BEFORE_QUERY,
-            module_code=module_code,
-            payload={
-                "request": request,
-            },
+        rows = [
+            dict(row._mapping)
+            for row in self.db.execute(stmt).fetchall()
+        ]
+
+        total_stmt = CountBuilder.build(
+            table,
+            filters=filters,
+            search=search,
         )
 
-        EventRegistry.dispatcher().dispatch(
-            before_event
+        total = self.db.execute(total_stmt).scalar_one()
+
+        return QueryResult.build(
+            rows=rows,
+            total=total,
+            limit=limit,
+            offset=offset,
         )
-
-        if before_event.cancelled:
-            raise Exception("Query cancelled.")
-
-        result = self.query_engine.execute(
-            runtime,
-            before_event.payload["request"],
-        )
-
-        after_event = Event(
-            event_type=EventType.AFTER_QUERY,
-            module_code=module_code,
-            payload={
-                "request": before_event.payload["request"],
-            },
-            result=result,
-        )
-
-        EventRegistry.dispatcher().dispatch(
-            after_event
-        )
-
-        return after_event.result

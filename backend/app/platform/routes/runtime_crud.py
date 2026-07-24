@@ -10,26 +10,41 @@ from app.platform.crud import CrudEngine
 from app.platform.runtime.runtime_data_engine import RuntimeDataEngine
 from app.platform.runtime.runtime_engine import RuntimeEngine
 
-router = APIRouter(prefix="/runtime", tags=["Runtime CRUD"])
+# IMPORTANT:
+# Runtime metadata is exposed under:
+#     /runtime/{module_code}
+#
+# Runtime CRUD is exposed under:
+#     /runtime-data/{module_code}
+#
+# This avoids route conflicts.
+
+router = APIRouter(
+    prefix="/runtime-data",
+    tags=["Runtime CRUD"],
+)
 
 
 def get_crud_engine(db: Session) -> CrudEngine:
     runtime_engine = RuntimeEngine(db)
     data_engine = RuntimeDataEngine(db)
-    return CrudEngine(runtime_engine, data_engine)
+
+    return CrudEngine(
+        runtime_engine=runtime_engine,
+        data_engine=data_engine,
+    )
 
 
 @router.get("/{module_code}")
 def list_records(
     module_code: str,
-    limit: int = Query(100, ge=1),
-    offset: int = Query(0, ge=0),
+    limit: int = Query(default=100, ge=1),
+    offset: int = Query(default=0, ge=0),
     search: str | None = None,
     order_by: str | None = None,
     descending: bool = False,
     db: Session = Depends(get_db),
 ):
-
     engine = get_crud_engine(db)
 
     return engine.list(
@@ -48,7 +63,6 @@ def get_record(
     record_id: int,
     db: Session = Depends(get_db),
 ):
-
     engine = get_crud_engine(db)
 
     return engine.get(
@@ -63,7 +77,6 @@ def create_record(
     values: dict[str, Any],
     db: Session = Depends(get_db),
 ):
-
     engine = get_crud_engine(db)
 
     return engine.create(
@@ -79,7 +92,6 @@ def update_record(
     values: dict[str, Any],
     db: Session = Depends(get_db),
 ):
-
     engine = get_crud_engine(db)
 
     engine.update(
@@ -88,7 +100,10 @@ def update_record(
         values=values,
     )
 
-    return {"success": True}
+    return {
+        "success": True,
+        "message": "Record updated successfully.",
+    }
 
 
 @router.delete("/{module_code}/{record_id}")
@@ -97,7 +112,6 @@ def delete_record(
     record_id: int,
     db: Session = Depends(get_db),
 ):
-
     engine = get_crud_engine(db)
 
     engine.delete(
@@ -105,4 +119,7 @@ def delete_record(
         record_id=record_id,
     )
 
-    return {"success": True}
+    return {
+        "success": True,
+        "message": "Record deleted successfully.",
+    }

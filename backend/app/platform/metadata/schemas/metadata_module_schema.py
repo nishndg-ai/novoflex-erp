@@ -7,18 +7,26 @@ class MetadataModuleBase(BaseModel):
     module_code: str
     module_name: str
     display_name: str
+
     description: Optional[str] = None
-    icon: Optional[str] = None
+
+    application: str
+    category: str
+
     route: str
-    api_endpoint: str
+    icon: Optional[str] = None
+    menu_order: int = 0
+
     table_name: str
-    schema_name: str = "public"
-    display_order: int = 0
+    api_endpoint: str
+    page_size: int = 20
+
+    supports_excel: bool = True
+    supports_workflow: bool = False
+    supports_dashboard: bool = False
+    supports_ai: bool = False
+
     is_system: bool = False
-    allow_import: bool = True
-    allow_export: bool = True
-    allow_workflow: bool = False
-    allow_approval: bool = False
 
 
 class MetadataModuleCreate(MetadataModuleBase):

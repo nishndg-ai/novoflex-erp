@@ -5,6 +5,7 @@ import DashboardPage from "./pages/DashboardPage";
 import Company from "./pages/Company";
 import Plant from "./pages/Plant";
 import Uom from "./pages/Uom";
+import Role from "./pages/role";
 
 function isAuthenticated() {
   return localStorage.getItem("token") !== null;
@@ -42,6 +43,14 @@ export default function App() {
           }
         />
 
+<Route
+  path="/role"
+  element={
+    isAuthenticated()
+      ? <Role />
+      : <Navigate to="/" replace />
+  }
+/>
         <Route
           path="/plant"
           element={
