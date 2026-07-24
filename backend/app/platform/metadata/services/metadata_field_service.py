@@ -1,7 +1,12 @@
 from sqlalchemy.orm import Session
 
+from app.platform.metadata.models.metadata_field import MetadataField
 from app.platform.metadata.repository.metadata_field_repository import (
     metadata_field_repository,
+)
+from app.platform.metadata.schemas.metadata_field_schema import (
+    MetadataFieldCreate,
+    MetadataFieldUpdate,
 )
 
 
@@ -20,22 +25,26 @@ class MetadataFieldService:
     def create(
         self,
         db: Session,
-        field,
+        field: MetadataFieldCreate,
     ):
-        return metadata_field_repository.create(
-            db,
-            field,
-        )
+        db_obj = MetadataField(**field.model_dump())
+        return metadata_field_repository.create(db, db_obj)
 
     def update(
         self,
         db: Session,
-        field,
+        field_id: int,
+        field: MetadataFieldUpdate,
     ):
-        return metadata_field_repository.update(
-            db,
-            field,
-        )
+        db_obj = metadata_field_repository.get_by_id(db, field_id)
+
+        if db_obj is None:
+            return None
+
+        for key, value in field.model_dump().items():
+            setattr(db_obj, key, value)
+
+        return metadata_field_repository.update(db, db_obj)
 
     def delete(
         self,
