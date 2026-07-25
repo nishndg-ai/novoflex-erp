@@ -14,6 +14,7 @@ import {
   Search,
 } from "@mui/icons-material";
 
+
 export default function TopBar() {
   return (
     <AppBar
@@ -25,6 +26,7 @@ export default function TopBar() {
         zIndex: 1201,
       }}
     >
+
       <Toolbar>
 
         <img
@@ -35,6 +37,7 @@ export default function TopBar() {
             marginRight: 30,
           }}
         />
+
 
         <Box
           sx={{
@@ -47,6 +50,7 @@ export default function TopBar() {
             maxWidth: 500,
           }}
         >
+
           <Search />
 
           <InputBase
@@ -56,25 +60,48 @@ export default function TopBar() {
               flex: 1,
             }}
           />
+
         </Box>
 
-        <Box flexGrow={1} />
+
+        {/* Fixed MUI v7 syntax */}
+        <Box
+          sx={{
+            flexGrow: 1,
+          }}
+        />
+
 
         <IconButton>
-          <Badge badgeContent={5} color="error">
+
+          <Badge
+            badgeContent={5}
+            color="error"
+          >
             <Notifications />
           </Badge>
+
         </IconButton>
+
 
         <IconButton>
+
           <Settings />
+
         </IconButton>
 
-        <Avatar sx={{ ml: 2 }}>
+
+        <Avatar
+          sx={{
+            ml: 2,
+          }}
+        >
           A
         </Avatar>
 
+
       </Toolbar>
+
     </AppBar>
   );
 }

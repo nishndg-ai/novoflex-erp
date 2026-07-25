@@ -9,6 +9,10 @@ from app.platform.runtime.module_loader import ModuleLoader
 from app.platform.runtime.permission_loader import PermissionLoader
 from app.platform.runtime.report_loader import ReportLoader
 from app.platform.runtime.types import RuntimeDefinition
+from app.platform.runtime.view_component_loader import (
+    ViewComponentLoader,
+)
+from app.platform.runtime.view_loader import ViewLoader
 from app.platform.runtime.workflow_loader import WorkflowLoader
 
 logger = logging.getLogger(__name__)
@@ -58,6 +62,32 @@ class RuntimeEngine:
             LayoutLoader.load_layout,
             module.id,
         )
+
+        runtime.views = self._safe_load(
+            "ViewLoader",
+            ViewLoader.load_views,
+            module.id,
+        )
+
+        components = self._safe_load(
+            "ViewComponentLoader",
+            ViewComponentLoader.load_view_components,
+            module.id,
+        )
+
+        component_map: dict[int, list] = {}
+
+        for component in components:
+            component_map.setdefault(
+                component.view_id,
+                [],
+            ).append(component)
+
+        for view in runtime.views:
+            view.components = component_map.get(
+                view.id,
+                [],
+            )
 
         runtime.workflow = self._safe_load(
             "WorkflowLoader",

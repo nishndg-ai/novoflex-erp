@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import {
   AppBar,
@@ -25,47 +24,80 @@ import SearchIcon from "@mui/icons-material/Search";
 
 import Sidebar from "../components/Sidebar";
 
+
 const drawerWidth = 260;
+
 
 interface Props {
   children: ReactNode;
 }
 
-export default function MainLayout({ children }: Props) {
-  const navigate = useNavigate();
+
+export default function MainLayout({
+  children,
+}: Props) {
+
 
   // =========================
   // SETTINGS MENU STATE
   // =========================
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const [
+    anchorEl,
+    setAnchorEl,
+  ] = useState<null | HTMLElement>(null);
+
+
   const open = Boolean(anchorEl);
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+
+  const handleMenuOpen = (
+    event: React.MouseEvent<HTMLElement>
+  ) => {
+    setAnchorEl(
+      event.currentTarget
+    );
   };
+
 
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
+
   // =========================
   // LOGOUT
   // =========================
-const handleLogout = () => {
-  console.log("LOGOUT FUNCTION CALLED");
-  console.log("LOGOUT CLICKED");
 
-  localStorage.clear();
+  const handleLogout = () => {
 
-  handleMenuClose();
-  window.location.href = "/";
-};
+    console.log(
+      "LOGOUT FUNCTION CALLED"
+    );
+
+    console.log(
+      "LOGOUT CLICKED"
+    );
+
+
+    localStorage.clear();
+
+    handleMenuClose();
+
+    window.location.href = "/";
+
+  };
+
 
   return (
+
     <Box sx={{ display: "flex" }}>
+
       <CssBaseline />
 
+
       {/* ================= TOP BAR ================= */}
+
       <AppBar
         position="fixed"
         elevation={0}
@@ -73,12 +105,16 @@ const handleLogout = () => {
           zIndex: 1300,
           backgroundColor: "#FFFFFF",
           color: "#1E293B",
-          borderBottom: "1px solid #E5E7EB",
+          borderBottom:
+            "1px solid #E5E7EB",
         }}
       >
+
         <Toolbar sx={{ px: 3 }}>
 
+
           {/* Company Logo */}
+
           <Box
             component="img"
             src="/logo.png"
@@ -89,10 +125,18 @@ const handleLogout = () => {
             }}
           />
 
+
           {/* Spacer */}
-          <Box sx={{ flexGrow: 1 }} />
+
+          <Box
+            sx={{
+              flexGrow: 1,
+            }}
+          />
+
 
           {/* Search */}
+
           <Paper
             elevation={0}
             sx={{
@@ -105,72 +149,146 @@ const handleLogout = () => {
               bgcolor: "#F5F7FA",
             }}
           >
-            <SearchIcon sx={{ color: "#64748B" }} />
+
+            <SearchIcon
+              sx={{
+                color: "#64748B",
+              }}
+            />
+
 
             <InputBase
               placeholder="Search modules, reports..."
-              sx={{ ml: 1, flex: 1 }}
+              sx={{
+                ml: 1,
+                flex: 1,
+              }}
             />
+
+
           </Paper>
 
+
           {/* Spacer */}
-          <Box sx={{ flexGrow: 1 }} />
+
+          <Box
+            sx={{
+              flexGrow: 1,
+            }}
+          />
+
 
           {/* Notifications */}
+
           <IconButton>
-            <Badge badgeContent={3} color="error">
+
+            <Badge
+              badgeContent={3}
+              color="error"
+            >
+
               <NotificationsIcon />
+
             </Badge>
+
           </IconButton>
+
+
 
           {/* Messages */}
+
           <IconButton>
-            <Badge badgeContent={5} color="primary">
+
+            <Badge
+              badgeContent={5}
+              color="primary"
+            >
+
               <EmailIcon />
+
             </Badge>
+
           </IconButton>
 
-          {/* ================= SETTINGS ICON ================= */}
-          <IconButton onClick={handleMenuOpen}>
+
+
+          {/* Settings */}
+
+          <IconButton
+            onClick={handleMenuOpen}
+          >
+
             <SettingsIcon />
+
           </IconButton>
 
-          {/* ================= SETTINGS MENU ================= */}
+
+
+          {/* Settings Menu */}
+
           <Menu
-  anchorEl={anchorEl}
-  open={open}
-  onClose={handleMenuClose}
-  slotProps={{
-    paper: {
-      sx: {
-        borderRadius: 2,
-        minWidth: 150,
-      },
-    },
-  }}
->
-  <MenuItem
-    onClick={handleLogout}
-    sx={{
-      color: "#DC2626",
-      fontWeight: 600,
-    }}
-  >
-    Logout
-  </MenuItem>
-</Menu>
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleMenuClose}
+            slotProps={{
+              paper: {
+                sx: {
+                  borderRadius: 2,
+                  minWidth: 150,
+                },
+              },
+            }}
+          >
+
+            <MenuItem
+              onClick={handleLogout}
+              sx={{
+                color: "#DC2626",
+                fontWeight: 600,
+              }}
+            >
+              Logout
+            </MenuItem>
+
+
+          </Menu>
+
+
 
           {/* User Info */}
-          <Box sx={{ textAlign: "right", ml: 3, mr: 2 }}>
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+
+          <Box
+            sx={{
+              textAlign: "right",
+              ml: 3,
+              mr: 2,
+            }}
+          >
+
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 700,
+              }}
+            >
               Welcome
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+
+
+            <Typography
+              variant="caption"
+              color="text.secondary"
+            >
               Administrator
             </Typography>
+
+
           </Box>
 
+
+
           {/* Avatar */}
+
           <Avatar
             sx={{
               bgcolor: "#005BAA",
@@ -182,10 +300,15 @@ const handleLogout = () => {
             NA
           </Avatar>
 
+
         </Toolbar>
+
       </AppBar>
 
+
+
       {/* ================= SIDEBAR ================= */}
+
       <Drawer
         variant="permanent"
         sx={{
@@ -199,12 +322,18 @@ const handleLogout = () => {
             color: "#FFFFFF",
             borderRight: "none",
           },
+
         }}
       >
+
         <Sidebar />
+
       </Drawer>
 
+
+
       {/* ================= PAGE CONTENT ================= */}
+
       <Box
         component="main"
         sx={{
@@ -216,8 +345,13 @@ const handleLogout = () => {
           backgroundColor: "#F5F7FA",
         }}
       >
+
         {children}
+
       </Box>
+
+
     </Box>
+
   );
 }

@@ -19,7 +19,7 @@ class ModuleDefinition(BaseModel):
     category: str
 
     route: str
-    icon: str |None = None
+    icon: str | None = None
 
     menu_order: int
 
@@ -102,6 +102,61 @@ class LayoutDefinition(BaseModel):
 
 
 # ==========================================================
+# VIEW
+# ==========================================================
+
+class ViewDefinition(BaseModel):
+    id: int
+
+    view_code: str
+    view_name: str
+    view_type: str
+
+    title: str | None = None
+    description: str | None = None
+    icon: str | None = None
+
+    display_order: int
+
+    is_default: bool
+    is_active: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ==========================================================
+# VIEW COMPONENT
+# ==========================================================
+
+class ViewComponentDefinition(BaseModel):
+    id: int
+
+    view_id: int
+
+    component_type: str
+    component_key: str
+
+    title: str | None = None
+
+    field_name: str | None = None
+
+    row_no: int
+    column_no: int
+    column_span: int
+
+    width: int | None = None
+    height: int | None = None
+
+    config: dict[str, Any] | None = None
+
+    display_order: int
+
+    is_visible: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ==========================================================
 # WORKFLOW
 # ==========================================================
 
@@ -152,6 +207,8 @@ class RuntimeDefinition(BaseModel):
     fields: list[FieldDefinition] = Field(default_factory=list)
 
     layout: list[LayoutDefinition] = Field(default_factory=list)
+
+    views: list[ViewDefinition] = Field(default_factory=list)
 
     workflow: list[WorkflowDefinition] = Field(default_factory=list)
 
