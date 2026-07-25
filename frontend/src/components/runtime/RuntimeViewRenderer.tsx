@@ -6,42 +6,133 @@ import CalendarRenderer from "./CalendarRenderer";
 import ChartRenderer from "./ChartRenderer";
 import TimelineRenderer from "./TimelineRenderer";
 
-import type { RuntimeView } from "../../types/runtime";
+import type {
+  RuntimeView,
+} from "../../types/runtime";
+
 
 interface RuntimeViewRendererProps {
+
   view: RuntimeView;
+
+  moduleCode?: string;
+
 }
 
+
 export default function RuntimeViewRenderer({
+
   view,
+
+  moduleCode,
+
 }: RuntimeViewRendererProps) {
-  switch (view.view_type.toUpperCase()) {
+
+
+  switch (
+    view.view_type.toUpperCase()
+  ) {
+
+
     case "FORM":
-      return <FormRenderer view={view} />;
+
+      return (
+
+        <FormRenderer
+          view={view}
+          moduleCode={moduleCode}
+        />
+
+      );
+
+
 
     case "GRID":
-      return <GridRenderer view={view} />;
+
+      return (
+
+        <GridRenderer
+          view={view}
+        />
+
+      );
+
+
 
     case "DASHBOARD":
-      return <DashboardRenderer view={view} />;
+
+      return (
+
+        <DashboardRenderer
+          view={view}
+        />
+
+      );
+
+
 
     case "KANBAN":
-      return <KanbanRenderer view={view} />;
+
+      return (
+
+        <KanbanRenderer
+          view={view}
+        />
+
+      );
+
+
 
     case "CALENDAR":
-      return <CalendarRenderer view={view} />;
+
+      return (
+
+        <CalendarRenderer
+          view={view}
+        />
+
+      );
+
+
 
     case "CHART":
-      return <ChartRenderer view={view} />;
+
+      return (
+
+        <ChartRenderer
+          view={view}
+        />
+
+      );
+
+
 
     case "TIMELINE":
-      return <TimelineRenderer view={view} />;
+
+      return (
+
+        <TimelineRenderer
+          view={view}
+        />
+
+      );
+
+
 
     default:
+
       return (
+
         <div>
-          Unsupported View Type : {view.view_type}
+
+          Unsupported View Type :
+          {" "}
+          {view.view_type}
+
         </div>
+
       );
+
   }
+
 }

@@ -1,4 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -7,15 +12,24 @@ import Plant from "./pages/Plant";
 import Uom from "./pages/Uom";
 import Role from "./pages/role";
 
+import RuntimeModulePage from "./pages/runtime/RuntimeModulePage";
+
+
 function isAuthenticated() {
   return localStorage.getItem("token") !== null;
 }
 
+
 export default function App() {
+
   return (
+
     <BrowserRouter>
+
       <Routes>
 
+
+        {/* LOGIN */}
         <Route
           path="/"
           element={
@@ -25,6 +39,8 @@ export default function App() {
           }
         />
 
+
+        {/* DASHBOARD */}
         <Route
           path="/dashboard"
           element={
@@ -34,6 +50,8 @@ export default function App() {
           }
         />
 
+
+        {/* COMPANY */}
         <Route
           path="/company"
           element={
@@ -43,14 +61,19 @@ export default function App() {
           }
         />
 
-<Route
-  path="/role"
-  element={
-    isAuthenticated()
-      ? <Role />
-      : <Navigate to="/" replace />
-  }
-/>
+
+        {/* ROLE */}
+        <Route
+          path="/role"
+          element={
+            isAuthenticated()
+              ? <Role />
+              : <Navigate to="/" replace />
+          }
+        />
+
+
+        {/* PLANT */}
         <Route
           path="/plant"
           element={
@@ -60,6 +83,8 @@ export default function App() {
           }
         />
 
+
+        {/* UOM */}
         <Route
           path="/uom"
           element={
@@ -69,7 +94,36 @@ export default function App() {
           }
         />
 
+
+        {/* ===================================
+            RUNTIME MODULE ROUTE
+            Example:
+            /runtime/company
+            /runtime/customer
+            /runtime/item
+        ==================================== */}
+        <Route
+          path="/runtime/:moduleCode"
+          element={
+            isAuthenticated()
+              ? <RuntimeModulePage />
+              : <Navigate to="/" replace />
+          }
+        />
+
+
+        {/* UNKNOWN ROUTE */}
+        <Route
+          path="*"
+          element={
+            <Navigate to="/" replace />
+          }
+        />
+
+
       </Routes>
+
     </BrowserRouter>
+
   );
 }

@@ -1,21 +1,45 @@
 import { useState } from "react";
 
-import type { RuntimeView } from "../../types/runtime";
+import {
+  Button,
+  Box,
+  Alert,
+} from "@mui/material";
+
+import type {
+  RuntimeView,
+} from "../../types/runtime";
+
+import {
+  createRuntimeRecord,
+} from "../../services/runtimeService";
+
 import DynamicControl from "./DynamicControl";
 
 
 interface Props {
   view: RuntimeView;
+  moduleCode?: string;
 }
 
 
 export default function FormRenderer({
   view,
+  moduleCode,
 }: Props) {
 
-  const [values, setValues] = useState<
-    Record<string, unknown>
-  >({});
+
+  const [
+    values,
+    setValues,
+  ] = useState<Record<string, unknown>>({});
+
+
+  const [
+    message,
+    setMessage,
+  ] = useState("");
+
 
 
   function handleChange(
@@ -23,73 +47,162 @@ export default function FormRenderer({
     value: unknown
   ) {
 
-    setValues((previous) => ({
-      ...previous,
-      [fieldName]: value,
-    }));
+    setValues(
+      (previous) => ({
+        ...previous,
+        [fieldName]: value,
+      })
+    );
 
   }
 
 
+
+  async function handleSave() {
+
+    try {
+
+      if (!moduleCode) {
+
+        setMessage(
+          "Module code missing"
+        );
+
+        return;
+
+      }
+
+
+      await createRuntimeRecord(
+        moduleCode,
+        values
+      );
+
+
+      setMessage(
+        "Record saved successfully"
+      );
+
+
+      setValues({});
+
+
+    } catch (error) {
+
+      console.error(
+        error
+      );
+
+
+      setMessage(
+        "Save failed"
+      );
+
+    }
+
+  }
+
+
+
   return (
-    <div>
+
+    <Box>
+
 
       {view.title && (
+
         <h2>
           {view.title}
         </h2>
+
       )}
 
 
-      <div>
 
-        {view.components
+      {
+        message && (
+
+          <Alert
+            severity="info"
+            sx={{
+              mb: 2,
+            }}
+          >
+            {message}
+          </Alert>
+
+        )
+      }
+
+
+
+      {
+        view.components
+
           .filter(
             (component) =>
               component.is_visible
           )
+
           .sort(
             (a, b) =>
               a.display_order -
               b.display_order
           )
-          .map((component) => (
 
-            <div
-              key={component.id}
-            >
+          .map(
+            (component) => (
 
-              <DynamicControl
-                component={component}
-                value={
-                  values[
-                    component.field_name ?? ""
-                  ]
-                }
-                onChange={
-                  (value) =>
-                    handleChange(
-                      component.field_name ?? "",
-                      value
-                    )
-                }
-              />
+              <Box
+                key={component.id}
+                sx={{
+                  mb: 2,
+                }}
+              >
 
-            </div>
+                <DynamicControl
 
-          ))}
+                  component={component}
 
-      </div>
+                  value={
+                    values[
+                      component.field_name ?? ""
+                    ]
+                  }
+
+                  onChange={
+                    (value) =>
+                      handleChange(
+                        component.field_name ?? "",
+                        value
+                      )
+                  }
+
+                />
 
 
-      <pre>
-        {JSON.stringify(
-          values,
-          null,
-          2
-        )}
-      </pre>
+              </Box>
 
-    </div>
+            )
+
+          )
+      }
+
+
+
+      <Button
+        variant="contained"
+        onClick={handleSave}
+        sx={{
+          mt: 2,
+        }}
+      >
+        Save
+      </Button>
+
+
+    </Box>
+
   );
+
 }
