@@ -48,6 +48,17 @@ class FieldLoader:
                     length=field.length,
                     decimal_places=field.decimal_places,
                     default_value=field.default_value,
+
+                    # =====================================
+                    # Grid Properties
+                    # =====================================
+                    show_in_grid=field.show_in_grid,
+                    grid_order=field.grid_order,
+                    grid_width=field.grid_width,
+                    is_sortable=field.is_sortable,
+                    is_filterable=field.is_filterable,
+                    is_searchable=field.is_searchable,
+
                     validation_rules=[],
                 )
             )

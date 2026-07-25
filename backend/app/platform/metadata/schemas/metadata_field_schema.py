@@ -26,6 +26,14 @@ class MetadataFieldBase(BaseModel):
 
     display_order: int = 1
 
+    # Grid Properties
+    show_in_grid: bool = True
+    grid_order: int = 1
+    grid_width: int = 150
+    is_sortable: bool = True
+    is_filterable: bool = True
+    is_searchable: bool = True
+
 
 class MetadataFieldCreate(MetadataFieldBase):
     pass

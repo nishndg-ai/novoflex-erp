@@ -92,6 +92,42 @@ class MetadataField(BaseEntity):
         nullable=False,
     )
 
+    show_in_grid = Column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    grid_order = Column(
+        Integer,
+        default=1,
+        nullable=False,
+    )
+
+    grid_width = Column(
+        Integer,
+        default=150,
+        nullable=False,
+    )
+
+    is_sortable = Column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    is_filterable = Column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    is_searchable = Column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+    
     module = relationship(
         "MetadataModule",
         backref="fields",

@@ -19,7 +19,7 @@ class ModuleDefinition(BaseModel):
     category: str
 
     route: str
-    icon: str | None = None
+    icon: str |None = None
 
     menu_order: int
 
@@ -63,6 +63,22 @@ class FieldDefinition(BaseModel):
     decimal_places: int | None = None
 
     default_value: Any | None = None
+
+    # ======================================================
+    # Grid Properties
+    # ======================================================
+
+    show_in_grid: bool = True
+    grid_order: int = 0
+    grid_width: int = 150
+
+    is_sortable: bool = True
+    is_filterable: bool = True
+    is_searchable: bool = True
+
+    # ======================================================
+    # Validation
+    # ======================================================
 
     validation_rules: list[str] = Field(default_factory=list)
 
