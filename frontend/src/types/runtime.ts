@@ -45,13 +45,69 @@ export interface RuntimeLayout {
     field_name: string;
 }
 
+/* -------------------- Views -------------------- */
+
+export interface RuntimeViewComponent {
+    id: number;
+    view_id: number;
+
+    component_type: string;
+    component_key: string;
+
+    title?: string;
+    field_name?: string;
+
+    row_no: number;
+    column_no: number;
+    column_span: number;
+
+    width?: number;
+    height?: number;
+
+    config?: Record<string, unknown>;
+
+    display_order: number;
+    is_visible: boolean;
+}
+
+export interface RuntimeView {
+    id: number;
+
+    view_code: string;
+    view_name: string;
+    view_type: string;
+
+    title: string;
+    description?: string;
+
+    icon?: string;
+
+    display_order: number;
+
+    is_default: boolean;
+    is_active: boolean;
+
+    components: RuntimeViewComponent[];
+}
+
+/* -------------------- Runtime -------------------- */
+
 export interface RuntimeMetadata {
     module: RuntimeModule;
+
     fields: RuntimeField[];
+
     layout: RuntimeLayout[];
+
+    views: RuntimeView[];
+
     workflow: unknown[];
+
     permissions: unknown[];
+
     dashboard: unknown[];
+
     reports: unknown[];
+
     errors?: string[];
 }
