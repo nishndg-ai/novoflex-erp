@@ -31,7 +31,7 @@ export default function TopBar() {
 
         <img
           src="/logo.png"
-          alt="NOVOFLEX"
+          alt="BLUISH"
           style={{
             height: 42,
             marginRight: 30,

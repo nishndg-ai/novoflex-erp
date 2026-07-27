@@ -15,6 +15,8 @@ from app.platform.metadata.models.metadata_permission import MetadataPermission
 from app.platform.metadata.models.metadata_dashboard import MetadataDashboard
 from app.platform.metadata.models.metadata_report import MetadataReport
 from app.platform.metadata.models.metadata_template import MetadataTemplate
+from app.platform.master_engine.models.master_history import MasterHistory
+from app.platform.master_engine.models.audit_log import AuditLog
 
 __all__ = [
     "Company",
