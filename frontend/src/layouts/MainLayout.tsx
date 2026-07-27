@@ -118,7 +118,7 @@ export default function MainLayout({
           <Box
             component="img"
             src="/logo.png"
-            alt="NOVOFLEX"
+            alt="BLUISH"
             sx={{
               height: 54,
               objectFit: "contain",

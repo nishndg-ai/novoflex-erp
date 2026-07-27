@@ -7,13 +7,13 @@ def dashboard():
 
     return {
 
-        "company": "NovoFlex Group",
+        "company": "BLUISH",
 
         "plants": [
             "Head Office",
             "Unit 1",
             "Unit 2",
-            "Novoflex Marketing Pvt Ltd"
+            "BLUISH Marketing Pvt Ltd"
         ],
 
         "today":{

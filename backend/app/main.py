@@ -63,17 +63,11 @@ async def lifespan(app: FastAPI):
     Application startup/shutdown lifecycle.
     """
 
-    # Create database tables
     Base.metadata.create_all(
         bind=engine
     )
 
     yield
-
-    # Future cleanup
-    # Redis
-    # Kafka
-    # Connections
 
 
 
@@ -83,7 +77,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
 
-    title="NOVOFLEX ERP",
+    title="BLUISH",
 
     description=
     "Enterprise Manufacturing ERP for Plastic Injection Moulding Industry",
@@ -247,7 +241,7 @@ def root():
     return {
 
         "application":
-            "NOVOFLEX ERP",
+            "BLUISH",
 
         "version":
             "1.0.0",

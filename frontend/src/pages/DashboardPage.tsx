@@ -76,7 +76,7 @@ export default function DashboardPage() {
           </Typography>
 
           <Typography sx={{ mt: 1, color: "#64748B" }}>
-            Welcome to NOVOFLEX ERP • Enterprise Manufacturing System
+            Welcome to BLUISH
           </Typography>
         </Box>
       </Box>

@@ -166,7 +166,7 @@ export default function LoginPage() {
 
               <img
                 src="/logo.png"
-                alt="NOVOFLEX"
+                alt="BLUISH"
                 style={{
                   maxWidth: 220,
                   width: "100%",
@@ -212,13 +212,13 @@ export default function LoginPage() {
                 }
               >
 
-                <MenuItem value="NIPL">
-                  NovoFlex Industries Pvt. Ltd.
+                <MenuItem value="BIPL">
+                  BLUISH
                 </MenuItem>
 
 
-                <MenuItem value="NMPL">
-                  NovoFlex Marketing Pvt. Ltd.
+                <MenuItem value="BMPL">
+                  BLUISH Marketing Pvt. Ltd.
                 </MenuItem>
 
 
