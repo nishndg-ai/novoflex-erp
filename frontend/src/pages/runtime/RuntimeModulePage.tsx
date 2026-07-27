@@ -18,12 +18,19 @@ import {
 
 import RuntimeViewRenderer from "../../components/runtime/RuntimeViewRenderer";
 
+import FormRenderer from "../../components/runtime/FormRenderer";
+
+
 
 export default function RuntimeModulePage() {
 
-  const {
-    moduleCode,
-  } = useParams();
+
+  const params = useParams();
+
+
+  const moduleCode =
+    params.moduleCode ?? "company";
+
 
 
   const [
@@ -32,10 +39,12 @@ export default function RuntimeModulePage() {
   ] = useState<RuntimeMetadata | null>(null);
 
 
+
   const [
     loading,
     setLoading,
   ] = useState(true);
+
 
 
   const [
@@ -45,15 +54,29 @@ export default function RuntimeModulePage() {
 
 
 
+  const [
+    showForm,
+    setShowForm,
+  ] = useState(false);
+
+
+
+  const [
+    selectedRecord,
+    setSelectedRecord,
+  ] = useState<Record<string, unknown> | null>(null);
+
+
+
+
+
   useEffect(() => {
+
 
     async function fetchRuntime() {
 
-      try {
 
-        if (!moduleCode) {
-          return;
-        }
+      try {
 
 
         const response =
@@ -62,13 +85,22 @@ export default function RuntimeModulePage() {
           );
 
 
-        setMetadata(response);
+        console.log(
+          "RUNTIME METADATA:",
+          response
+        );
+
+
+        setMetadata(
+          response
+        );
 
 
       } catch (err) {
 
+
         console.error(
-          "Runtime loading error:",
+          "RUNTIME API ERROR:",
           err
         );
 
@@ -80,11 +112,15 @@ export default function RuntimeModulePage() {
 
       } finally {
 
+
         setLoading(false);
+
 
       }
 
+
     }
+
 
 
     fetchRuntime();
@@ -94,15 +130,21 @@ export default function RuntimeModulePage() {
 
 
 
+
+
+
+
+
   if (loading) {
+
 
     return (
 
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "center",
-          mt: 5,
+          display:"flex",
+          justifyContent:"center",
+          mt:5,
         }}
       >
 
@@ -116,14 +158,18 @@ export default function RuntimeModulePage() {
 
 
 
+
+
+
   if (error) {
+
 
     return (
 
-      <Typography
-        color="error"
-      >
+      <Typography color="error">
+
         {error}
+
       </Typography>
 
     );
@@ -132,66 +178,75 @@ export default function RuntimeModulePage() {
 
 
 
+
+
+
   if (!metadata) {
 
-    return null;
+
+    return (
+
+      <Typography>
+
+        No runtime metadata found
+
+      </Typography>
+
+    );
 
   }
 
 
 
-  /*
-    If database contains views,
-    use configured view.
-
-    Otherwise generate
-    default FORM view
-    from metadata fields.
-  */
 
 
-  const defaultView: RuntimeView = {
 
-    id: 0,
+  const defaultGridView: RuntimeView = {
 
-    view_code:
-      "DEFAULT_FORM",
 
-    view_name:
-      "Default Form",
+    id:0,
 
-    view_type:
-      "FORM",
+    view_code:"DEFAULT_GRID",
+
+    view_name:"Default Grid",
+
+    view_type:"GRID",
 
     title:
       metadata.module.display_name,
 
+
     description:
-      "Auto generated runtime form",
+      "Auto generated runtime grid",
 
-    display_order:
-      1,
 
-    is_default:
-      true,
+    display_order:1,
 
-    is_active:
-      true,
+
+    is_default:true,
+
+
+    is_active:true,
 
 
     components:
 
-      metadata.fields.map(
-        (field) => ({
+      metadata.fields
+
+      .filter(
+        field =>
+          field.is_visible
+      )
+
+      .map(
+        field => ({
 
           id:
             field.id,
 
-          view_id:
-            0,
+          view_id:0,
 
-          component_type:
-            field.control_type,
+          component_type:"FIELD",
 
           component_key:
             field.field_name,
@@ -202,14 +257,12 @@ export default function RuntimeModulePage() {
           field_name:
             field.field_name,
 
-          row_no:
-            field.display_order,
+          row_no:1,
 
           column_no:
-            1,
+            field.display_order,
 
-          column_span:
-            1,
+          column_span:1,
 
           display_order:
             field.display_order,
@@ -225,10 +278,37 @@ export default function RuntimeModulePage() {
 
 
 
+
+
+
+
   const activeView =
+
     metadata.views.length > 0
+
       ? metadata.views[0]
-      : defaultView;
+
+      : defaultGridView;
+
+
+
+
+
+
+
+  const formView =
+
+    metadata.views.find(
+
+      view =>
+
+      view.view_type.toUpperCase() === "FORM"
+
+    ) ?? activeView;
+
+
+
+
 
 
 
@@ -238,28 +318,144 @@ export default function RuntimeModulePage() {
 
 
       <Typography
+
         variant="h4"
+
         sx={{
-          mb: 3,
-          fontWeight: 600,
+
+          mb:3,
+
+          fontWeight:600,
+
         }}
+
       >
 
-        {
-          metadata.module.display_name
-        }
+        {metadata.module.display_name}
 
       </Typography>
 
 
 
-      <RuntimeViewRenderer
 
-        view={activeView}
 
-        moduleCode={moduleCode}
 
-      />
+
+      {
+
+
+      showForm
+
+
+      ?
+
+
+      (
+
+        <FormRenderer
+
+
+          view={formView}
+
+
+          moduleCode={moduleCode}
+
+
+
+          recordId={
+
+            selectedRecord?.id as number | undefined
+
+          }
+
+
+
+          initialValues={
+
+            selectedRecord ?? undefined
+
+          }
+
+
+
+          onSaved={() => {
+
+
+            setSelectedRecord(null);
+
+
+            setShowForm(false);
+
+
+          }}
+
+
+
+        />
+
+      )
+
+
+
+      :
+
+
+
+      (
+
+        <RuntimeViewRenderer
+
+
+          view={activeView}
+
+
+          moduleCode={moduleCode}
+
+
+
+          onCreate={() => {
+
+
+            setSelectedRecord(null);
+
+
+            setShowForm(true);
+
+
+          }}
+
+
+
+          onEdit={(record) => {
+
+
+            console.log(
+
+              "EDIT RECORD:",
+
+              record
+
+            );
+
+
+            setSelectedRecord(record);
+
+
+            setShowForm(true);
+
+
+          }}
+
+
+        />
+
+      )
+
+
+      }
+
+
+
 
 
     </Box>

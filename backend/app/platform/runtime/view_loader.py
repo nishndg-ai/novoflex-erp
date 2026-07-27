@@ -21,30 +21,40 @@ class ViewLoader:
                 MetadataView.module_id == module_id,
                 MetadataView.is_active.is_(True),
             )
-            .order_by(
-                MetadataView.display_order,
-                MetadataView.view_name,
-            )
             .all()
         )
 
+
         runtime_views: list[ViewDefinition] = []
+
 
         for view in views:
 
             runtime_views.append(
+
                 ViewDefinition(
+
                     id=view.id,
+
                     view_code=view.view_code,
-                    view_name=view.view_name,
+
+                    view_name=view.display_name,
+
                     view_type=view.view_type,
-                    title=view.title,
+
+                    title=view.display_name,
+
                     description=view.description,
-                    icon=view.icon,
-                    display_order=view.display_order,
+
+                    display_order=1,
+
                     is_default=view.is_default,
+
                     is_active=view.is_active,
+
                 )
+
             )
+
 
         return runtime_views

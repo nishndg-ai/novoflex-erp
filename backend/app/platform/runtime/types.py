@@ -3,16 +3,19 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 
+
 # ==========================================================
 # MODULE
 # ==========================================================
 
 class ModuleDefinition(BaseModel):
+
     id: int
 
     module_code: str
     module_name: str
     display_name: str
+
     description: str | None = None
 
     application: str
@@ -35,7 +38,11 @@ class ModuleDefinition(BaseModel):
 
     is_system: bool
 
-    model_config = ConfigDict(from_attributes=True)
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 
 
 # ==========================================================
@@ -43,6 +50,7 @@ class ModuleDefinition(BaseModel):
 # ==========================================================
 
 class FieldDefinition(BaseModel):
+
     id: int
 
     field_name: str
@@ -64,9 +72,6 @@ class FieldDefinition(BaseModel):
 
     default_value: Any | None = None
 
-    # ======================================================
-    # Grid Properties
-    # ======================================================
 
     show_in_grid: bool = True
     grid_order: int = 0
@@ -76,13 +81,16 @@ class FieldDefinition(BaseModel):
     is_filterable: bool = True
     is_searchable: bool = True
 
-    # ======================================================
-    # Validation
-    # ======================================================
 
-    validation_rules: list[str] = Field(default_factory=list)
+    validation_rules: list[str] = Field(
+        default_factory=list
+    )
 
-    model_config = ConfigDict(from_attributes=True)
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 
 
 # ==========================================================
@@ -90,6 +98,7 @@ class FieldDefinition(BaseModel):
 # ==========================================================
 
 class LayoutDefinition(BaseModel):
+
     id: int
 
     row_no: int
@@ -98,30 +107,11 @@ class LayoutDefinition(BaseModel):
 
     field_name: str
 
-    model_config = ConfigDict(from_attributes=True)
 
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
-# ==========================================================
-# VIEW
-# ==========================================================
-
-class ViewDefinition(BaseModel):
-    id: int
-
-    view_code: str
-    view_name: str
-    view_type: str
-
-    title: str | None = None
-    description: str | None = None
-    icon: str | None = None
-
-    display_order: int
-
-    is_default: bool
-    is_active: bool
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 # ==========================================================
@@ -129,31 +119,108 @@ class ViewDefinition(BaseModel):
 # ==========================================================
 
 class ViewComponentDefinition(BaseModel):
+
     id: int
 
     view_id: int
 
     component_type: str
+
     component_key: str
+
 
     title: str | None = None
 
     field_name: str | None = None
 
+
+
     row_no: int
+
     column_no: int
+
     column_span: int
 
+
+
     width: int | None = None
+
     height: int | None = None
 
+
+
+    # Runtime UI configuration
+    #
+    # Example:
+    #
+    # {
+    #     "control_type": "checkbox"
+    # }
+    #
+    properties: dict[str, Any] | None = None
+
+
+
+    # Backward compatibility
     config: dict[str, Any] | None = None
+
+
 
     display_order: int
 
     is_visible: bool
 
-    model_config = ConfigDict(from_attributes=True)
+
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+
+# ==========================================================
+# VIEW
+# ==========================================================
+
+class ViewDefinition(BaseModel):
+
+    id: int
+
+    view_code: str
+
+    view_name: str
+
+    view_type: str
+
+
+
+    title: str | None = None
+
+    description: str | None = None
+
+    icon: str | None = None
+
+
+
+    display_order: int
+
+
+    is_default: bool
+
+    is_active: bool
+
+
+
+    components: list[ViewComponentDefinition] = Field(
+        default_factory=list
+    )
+
+
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 
 
 # ==========================================================
@@ -161,9 +228,14 @@ class ViewComponentDefinition(BaseModel):
 # ==========================================================
 
 class WorkflowDefinition(BaseModel):
+
     id: int
 
-    model_config = ConfigDict(from_attributes=True)
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 
 
 # ==========================================================
@@ -171,9 +243,14 @@ class WorkflowDefinition(BaseModel):
 # ==========================================================
 
 class PermissionDefinition(BaseModel):
+
     id: int
 
-    model_config = ConfigDict(from_attributes=True)
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 
 
 # ==========================================================
@@ -181,9 +258,14 @@ class PermissionDefinition(BaseModel):
 # ==========================================================
 
 class DashboardDefinition(BaseModel):
+
     id: int
 
-    model_config = ConfigDict(from_attributes=True)
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 
 
 # ==========================================================
@@ -191,9 +273,14 @@ class DashboardDefinition(BaseModel):
 # ==========================================================
 
 class ReportDefinition(BaseModel):
+
     id: int
 
-    model_config = ConfigDict(from_attributes=True)
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 
 
 # ==========================================================
@@ -204,20 +291,47 @@ class RuntimeDefinition(BaseModel):
 
     module: ModuleDefinition
 
-    fields: list[FieldDefinition] = Field(default_factory=list)
 
-    layout: list[LayoutDefinition] = Field(default_factory=list)
+    fields: list[FieldDefinition] = Field(
+        default_factory=list
+    )
 
-    views: list[ViewDefinition] = Field(default_factory=list)
 
-    workflow: list[WorkflowDefinition] = Field(default_factory=list)
+    layout: list[LayoutDefinition] = Field(
+        default_factory=list
+    )
 
-    permissions: list[PermissionDefinition] = Field(default_factory=list)
 
-    dashboard: list[DashboardDefinition] = Field(default_factory=list)
+    views: list[ViewDefinition] = Field(
+        default_factory=list
+    )
 
-    reports: list[ReportDefinition] = Field(default_factory=list)
 
-    errors: list[str] = Field(default_factory=list)
+    workflow: list[WorkflowDefinition] = Field(
+        default_factory=list
+    )
 
-    model_config = ConfigDict(from_attributes=True)
+
+    permissions: list[PermissionDefinition] = Field(
+        default_factory=list
+    )
+
+
+    dashboard: list[DashboardDefinition] = Field(
+        default_factory=list
+    )
+
+
+    reports: list[ReportDefinition] = Field(
+        default_factory=list
+    )
+
+
+    errors: list[str] = Field(
+        default_factory=list
+    )
+
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )

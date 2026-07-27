@@ -20,118 +20,244 @@ interface DynamicControlProps {
   onChange?: (
     value: unknown
   ) => void;
+
 }
 
 
+
 export default function DynamicControl({
+
   component,
+
   field,
+
   value,
+
   onChange,
+
 }: DynamicControlProps) {
 
 
-  // New metadata view runtime
+
+  // Runtime metadata component
   if (component) {
 
+
     if (!component.is_visible) {
+
       return null;
+
     }
 
 
+
+    const controlType =
+
+      String(
+
+        component.properties?.control_type ??
+
+        component.config?.control_type ??
+
+        ""
+
+      )
+
+      .toUpperCase();
+
+
+
+
+
+    console.log(
+      "DYNAMIC CONTROL:",
+      component.field_name,
+      controlType
+    );
+
+
+
+
+
     switch (
+
       component.component_type.toUpperCase()
+
     ) {
+
+
 
       case "FIELD":
 
-        switch (
-          String(
-            component.config?.control_type
-          ).toUpperCase()
-        ) {
+
+
+        switch (controlType) {
+
+
 
           case "CHECKBOX":
 
+
             return (
+
               <CheckBox
+
                 component={component}
+
                 value={value}
+
                 onChange={onChange}
+
               />
+
             );
+
+
+
+
+
+          case "TEXTBOX":
 
 
           default:
 
+
             return (
+
               <TextBox
+
                 component={component}
+
                 value={value}
+
                 onChange={onChange}
+
               />
+
             );
+
         }
+
+
+
 
 
       default:
 
+
         return (
+
           <TextField
+
             fullWidth
+
             label={
+
               component.title ??
+
               "Component"
+
             }
+
           />
+
         );
+
     }
+
   }
 
 
-  // Old DynamicForm compatibility
+
+
+
+
+
+  // Old field compatibility
+
   if (field) {
 
+
+
     switch (
-      field.control_type
+
+      field.control_type.toLowerCase()
+
     ) {
+
+
 
       case "textbox":
 
+
         return (
+
           <TextBox
+
             field={field}
+
             value={value}
+
             onChange={onChange}
+
           />
+
         );
+
+
+
 
 
       case "checkbox":
 
+
         return (
+
           <CheckBox
+
             field={field}
+
             value={value}
+
             onChange={onChange}
+
           />
+
         );
+
+
+
 
 
       default:
 
+
         return (
+
           <TextField
+
             fullWidth
+
             disabled
+
             label={
+
               `Unsupported: ${field.control_type}`
+
             }
+
           />
+
         );
+
     }
+
   }
 
 
+
+
+
   return null;
+
 }

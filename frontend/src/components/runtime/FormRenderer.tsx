@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Button,
@@ -6,101 +6,274 @@ import {
   Alert,
 } from "@mui/material";
 
+
 import type {
   RuntimeView,
 } from "../../types/runtime";
 
+
 import {
   createRuntimeRecord,
+  updateRuntimeRecord,
 } from "../../services/runtimeService";
+
 
 import DynamicControl from "./DynamicControl";
 
 
+
 interface Props {
+
   view: RuntimeView;
+
   moduleCode?: string;
+
+
+  recordId?: number | null;
+
+
+  initialValues?: Record<string, unknown>;
+
+
+  onSaved?: () => void;
+
 }
 
 
+
+
+
+
 export default function FormRenderer({
+
   view,
+
   moduleCode,
+
+  recordId,
+
+  initialValues,
+
+  onSaved,
+
 }: Props) {
 
 
+
   const [
+
     values,
+
     setValues,
-  ] = useState<Record<string, unknown>>({});
+
+  ] = useState<Record<string, unknown>>(
+
+    initialValues ?? {}
+
+  );
+
+
+
 
 
   const [
+
     message,
+
     setMessage,
+
   ] = useState("");
 
 
 
+
+
+
+
+  useEffect(() => {
+
+
+    if(initialValues) {
+
+
+      setValues(
+
+        initialValues
+
+      );
+
+
+    }
+
+
+  },[initialValues]);
+
+
+
+
+
+
+
+
   function handleChange(
-    fieldName: string,
-    value: unknown
-  ) {
+
+    fieldName:string,
+
+    value:unknown
+
+  ){
+
 
     setValues(
-      (previous) => ({
+
+      previous => ({
+
         ...previous,
-        [fieldName]: value,
+
+        [fieldName]:value,
+
       })
+
     );
+
 
   }
 
 
 
-  async function handleSave() {
+
+
+
+
+
+  async function handleSave(){
+
+
 
     try {
 
-      if (!moduleCode) {
+
+
+      if(!moduleCode){
+
 
         setMessage(
+
           "Module code missing"
+
         );
+
 
         return;
 
       }
 
 
-      await createRuntimeRecord(
-        moduleCode,
-        values
-      );
 
 
-      setMessage(
-        "Record saved successfully"
-      );
 
 
-      setValues({});
+      if(recordId){
 
 
-    } catch (error) {
 
-      console.error(
-        error
-      );
+        await updateRuntimeRecord(
+
+          moduleCode,
+
+          recordId,
+
+          values
+
+        );
 
 
-      setMessage(
-        "Save failed"
-      );
+
+        setMessage(
+
+          "Record updated successfully"
+
+        );
+
+
+
+      }
+
+      else {
+
+
+
+        await createRuntimeRecord(
+
+          moduleCode,
+
+          values
+
+        );
+
+
+
+        setMessage(
+
+          "Record saved successfully"
+
+        );
+
+
+
+      }
+
+
+
+
+
+
+
+      if(onSaved){
+
+
+        onSaved();
+
+
+      }
+
+
+
+
+
 
     }
 
+    catch(error){
+
+
+
+      console.error(
+
+        error
+
+      );
+
+
+
+      setMessage(
+
+        "Save failed"
+
+      );
+
+
+
+    }
+
+
   }
+
+
+
+
+
+
 
 
 
@@ -109,96 +282,181 @@ export default function FormRenderer({
     <Box>
 
 
-      {view.title && (
 
-        <h2>
-          {view.title}
-        </h2>
+      {
 
-      )}
+        view.title &&
+
+        (
+
+          <h2>
+
+            {view.title}
+
+          </h2>
+
+        )
+
+      }
+
+
 
 
 
       {
-        message && (
+
+        message &&
+
+        (
 
           <Alert
+
             severity="info"
+
             sx={{
-              mb: 2,
+
+              mb:2,
+
             }}
+
           >
+
             {message}
+
           </Alert>
 
         )
+
       }
+
+
+
+
 
 
 
       {
+
         view.components
 
-          .filter(
-            (component) =>
-              component.is_visible
+        .filter(
+
+          component =>
+
+          component.is_visible
+
+        )
+
+        .sort(
+
+          (a,b)=>
+
+          a.display_order -
+
+          b.display_order
+
+        )
+
+        .map(
+
+          component => (
+
+
+            <Box
+
+              key={component.id}
+
+              sx={{
+
+                mb:2,
+
+              }}
+
+            >
+
+
+
+              <DynamicControl
+
+
+                component={component}
+
+
+
+                value={
+
+                  values[
+
+                    component.field_name ?? ""
+
+                  ]
+
+                }
+
+
+
+                onChange={
+
+                  value =>
+
+                  handleChange(
+
+                    component.field_name ?? "",
+
+                    value
+
+                  )
+
+                }
+
+
+              />
+
+
+            </Box>
+
+
           )
 
-          .sort(
-            (a, b) =>
-              a.display_order -
-              b.display_order
-          )
+        )
 
-          .map(
-            (component) => (
-
-              <Box
-                key={component.id}
-                sx={{
-                  mb: 2,
-                }}
-              >
-
-                <DynamicControl
-
-                  component={component}
-
-                  value={
-                    values[
-                      component.field_name ?? ""
-                    ]
-                  }
-
-                  onChange={
-                    (value) =>
-                      handleChange(
-                        component.field_name ?? "",
-                        value
-                      )
-                  }
-
-                />
-
-
-              </Box>
-
-            )
-
-          )
       }
+
+
+
+
 
 
 
       <Button
+
         variant="contained"
+
         onClick={handleSave}
+
         sx={{
-          mt: 2,
+
+          mt:2,
+
         }}
+
       >
-        Save
+
+        {
+
+          recordId
+
+          ? "Update"
+
+          : "Save"
+
+        }
+
+
       </Button>
+
+
+
 
 
     </Box>
