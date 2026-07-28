@@ -1,11 +1,29 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    UploadFile,
+    File,
+    HTTPException,
+)
+
+from fastapi.responses import FileResponse
+
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
+from app.platform.runtime.runtime_engine import (
+    RuntimeEngine,
+)
+
 from app.platform.master_engine.import_service import (
     ImportService,
 )
+
+from app.platform.master_engine.template_generator import (
+    TemplateGenerator,
+)
+
 
 
 router = APIRouter(
@@ -14,6 +32,10 @@ router = APIRouter(
 )
 
 
+
+# =========================================================
+# Preview Import
+# =========================================================
 
 @router.post(
     "/{module_code}/preview",
@@ -30,14 +52,17 @@ async def preview_import(
             f"temp_{file.filename}"
         )
 
+
         content = await file.read()
+
 
         with open(
             temp_path,
-            "wb"
+            "wb",
         ) as f:
 
             f.write(content)
+
 
 
         service = ImportService(
@@ -60,7 +85,9 @@ async def preview_import(
 
 
 
-
+# =========================================================
+# Execute Import
+# =========================================================
 
 @router.post(
     "/{module_code}/execute",
@@ -78,11 +105,13 @@ async def execute_import(
             f"temp_{file.filename}"
         )
 
+
         content = await file.read()
+
 
         with open(
             temp_path,
-            "wb"
+            "wb",
         ) as f:
 
             f.write(content)
@@ -98,6 +127,68 @@ async def execute_import(
             module_code,
             temp_path,
             user=user,
+        )
+
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+
+
+
+# =========================================================
+# Download Import Template
+# =========================================================
+
+@router.get(
+    "/{module_code}/template",
+)
+def download_template(
+    module_code: str,
+    db: Session = Depends(get_db),
+):
+
+    try:
+
+        runtime = RuntimeEngine(
+            db
+        ).build_runtime(
+            module_code
+        )
+
+
+        if runtime is None:
+
+            raise HTTPException(
+                status_code=404,
+                detail=(
+                    f"Module '{module_code}' not found."
+                ),
+            )
+
+
+        file_path = (
+            f"template_{module_code}.xlsx"
+        )
+
+
+        TemplateGenerator().generate(
+            runtime,
+            file_path,
+        )
+
+
+        return FileResponse(
+            path=file_path,
+            filename=file_path,
+            media_type=(
+                "application/"
+                "vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet"
+            ),
         )
 
 

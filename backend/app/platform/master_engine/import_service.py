@@ -22,27 +22,7 @@ from app.platform.master_engine.importer import (
 class ImportService:
     """
     Runtime based Master Data Import Service.
-
-    Flow:
-
-    File
-      ↓
-    ImportEngine
-      ↓
-    Runtime Metadata
-      ↓
-    Column Mapping
-      ↓
-    Data Cleaning
-      ↓
-    Validation
-      ↓
-    Runtime CRUD
-      ↓
-    Audit + History
     """
-
-
 
     def __init__(
         self,
@@ -75,29 +55,19 @@ class ImportService:
         self,
         module_code: str,
         file_path: str,
-    ) -> dict[str, Any]:
+    ):
 
-
-        runtime = (
-            self.runtime_engine
-            .build_runtime(module_code)
+        runtime = self.runtime_engine.build_runtime(
+            module_code
         )
 
-
         if runtime is None:
-
             raise ValueError(
                 f"Module '{module_code}' not found"
             )
 
 
-        file_data = self.importer.preview(
-            file_path
-        )
-
-
         return {
-
             "module":
                 runtime.module.module_code,
 
@@ -111,8 +81,9 @@ class ImportService:
                 ],
 
             "file":
-                file_data,
-
+                self.importer.preview(
+                    file_path
+                ),
         }
 
 
@@ -126,12 +97,6 @@ class ImportService:
         runtime,
         row: dict[str, Any],
     ):
-
-        """
-        Convert Excel headers into
-        database field names.
-        """
-
 
         field_map = {
 
@@ -152,9 +117,7 @@ class ImportService:
                 key.upper()
             )
 
-
             if db_field:
-
                 mapped[db_field] = value
 
 
@@ -163,7 +126,63 @@ class ImportService:
 
 
     # ---------------------------------------------------------
-    # Clean Imported Values
+    # Column Validation
+    # ---------------------------------------------------------
+
+    def validate_columns(
+        self,
+        runtime,
+        row_columns: list[str],
+    ):
+
+        required_columns = {
+
+            field.field_name.upper()
+
+            for field in runtime.fields
+
+            if field.is_required
+
+        }
+
+
+        received_columns = {
+
+            column.upper()
+
+            for column in row_columns
+
+        }
+
+
+        missing = list(
+            required_columns - received_columns
+        )
+
+
+        extra = list(
+            received_columns -
+            {
+                field.field_name.upper()
+                for field in runtime.fields
+            }
+        )
+
+
+        if missing or extra:
+
+            raise ValueError(
+                {
+                    "error": "Invalid columns",
+                    "missing": missing,
+                    "extra": extra,
+                }
+            )
+
+
+
+    # ---------------------------------------------------------
+    # Clean Values
     # ---------------------------------------------------------
 
     def clean_values(
@@ -171,32 +190,66 @@ class ImportService:
         values: dict[str, Any],
     ):
 
-        """
-        Convert Excel empty values.
-
-        NaN  → None
-        """
-
         cleaned = {}
 
 
         for key, value in values.items():
 
-
             if (
                 isinstance(value, float)
                 and math.isnan(value)
             ):
-
                 cleaned[key] = None
 
-
             else:
-
                 cleaned[key] = value
 
 
         return cleaned
+
+
+
+    # ---------------------------------------------------------
+    # Apply Runtime Defaults
+    # ---------------------------------------------------------
+
+    def apply_defaults(
+        self,
+        runtime,
+        values: dict[str, Any],
+    ):
+
+        for field in runtime.fields:
+
+            current_value = values.get(
+                field.field_name
+            )
+
+
+            if current_value in (
+                None,
+                "",
+            ):
+
+                if field.default_value not in (
+                    None,
+                    "",
+                ):
+
+                    default = field.default_value
+
+
+                    if str(default).lower() == "true":
+                        default = True
+
+                    elif str(default).lower() == "false":
+                        default = False
+
+
+                    values[field.field_name] = default
+
+
+        return values
 
 
 
@@ -209,17 +262,15 @@ class ImportService:
         module_code: str,
         file_path: str,
         user: str = "admin",
-    ) -> dict[str, Any]:
+    ):
 
 
-        runtime = (
-            self.runtime_engine
-            .build_runtime(module_code)
+        runtime = self.runtime_engine.build_runtime(
+            module_code
         )
 
 
         if runtime is None:
-
             raise ValueError(
                 f"Module '{module_code}' not found"
             )
@@ -228,6 +279,15 @@ class ImportService:
         rows = self.importer.import_data(
             file_path
         )
+
+
+        if rows:
+
+            self.validate_columns(
+                runtime,
+                list(rows[0].keys()),
+            )
+
 
 
         inserted = 0
@@ -246,7 +306,6 @@ class ImportService:
 
             try:
 
-
                 mapped_row = self.map_columns(
                     runtime,
                     row,
@@ -255,6 +314,12 @@ class ImportService:
 
                 mapped_row = self.clean_values(
                     mapped_row
+                )
+
+
+                mapped_row = self.apply_defaults(
+                    runtime,
+                    mapped_row,
                 )
 
 
@@ -270,7 +335,6 @@ class ImportService:
 
 
             except Exception as e:
-
 
                 failed += 1
 
