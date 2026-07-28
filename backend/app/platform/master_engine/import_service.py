@@ -26,25 +26,7 @@ from app.platform.master_engine.import_validator import (
 class ImportService:
     """
     Runtime based Master Data Import Service.
-
-    Flow:
-
-    Excel
-      ↓
-    Import Engine
-      ↓
-    Column Mapping
-      ↓
-    Default Values
-      ↓
-    Validation Report
-      ↓
-    Runtime CRUD
-      ↓
-    Audit + History
     """
-
-
 
     def __init__(
         self,
@@ -253,12 +235,12 @@ class ImportService:
 
         for field in runtime.fields:
 
-            current_value = values.get(
+            value = values.get(
                 field.field_name
             )
 
 
-            if current_value in (
+            if value in (
                 None,
                 "",
             ):
@@ -289,15 +271,56 @@ class ImportService:
 
 
     # ---------------------------------------------------------
-    # Import Records - Validation Only
+    # Prepare Rows
     # ---------------------------------------------------------
 
-    def import_records(
+    def prepare_rows(
+        self,
+        runtime,
+        rows,
+    ):
+
+        prepared = []
+
+
+        for row in rows:
+
+            mapped = self.map_columns(
+                runtime,
+                row,
+            )
+
+
+            mapped = self.clean_values(
+                mapped
+            )
+
+
+            mapped = self.apply_defaults(
+                runtime,
+                mapped,
+            )
+
+
+            prepared.append(
+                mapped
+            )
+
+
+        return prepared
+
+
+
+    # ---------------------------------------------------------
+    # Validate Only
+    # ---------------------------------------------------------
+
+    def validate_import(
         self,
         module_code: str,
         file_path: str,
-        user: str = "admin",
     ):
+
 
         runtime = self.runtime_engine.build_runtime(
             module_code
@@ -317,6 +340,57 @@ class ImportService:
         )
 
 
+        if rows:
+
+            self.validate_columns(
+                runtime,
+                list(rows[0].keys()),
+            )
+
+
+
+        prepared_rows = self.prepare_rows(
+            runtime,
+            rows,
+        )
+
+
+        return self.import_validator.validate(
+            runtime,
+            prepared_rows,
+        )
+
+
+
+    # ---------------------------------------------------------
+    # Execute Import
+    # ---------------------------------------------------------
+
+    def import_records(
+        self,
+        module_code: str,
+        file_path: str,
+        user: str = "admin",
+    ):
+
+
+        runtime = self.runtime_engine.build_runtime(
+            module_code
+        )
+
+
+        if runtime is None:
+
+            raise ValueError(
+                f"Module '{module_code}' not found"
+            )
+
+
+
+        rows = self.importer.import_data(
+            file_path
+        )
+
 
         if rows:
 
@@ -327,40 +401,68 @@ class ImportService:
 
 
 
-        mapped_rows = []
-
-
-        for row in rows:
-
-            mapped_row = self.map_columns(
-                runtime,
-                row,
-            )
-
-
-            mapped_row = self.clean_values(
-                mapped_row
-            )
-
-
-            mapped_row = self.apply_defaults(
-                runtime,
-                mapped_row,
-            )
-
-
-            mapped_rows.append(
-                mapped_row
-            )
-
-
-
-        validation_result = (
-            self.import_validator.validate(
-                runtime,
-                mapped_rows,
-            )
+        prepared_rows = self.prepare_rows(
+            runtime,
+            rows,
         )
 
 
-        return validation_result
+
+        validation = self.import_validator.validate(
+            runtime,
+            prepared_rows,
+        )
+
+
+
+        inserted = 0
+
+        failed = validation["failed_rows"]
+
+        errors = validation["errors"]
+
+
+
+        for row in validation["valid_data"]:
+
+            try:
+
+                self.crud.create(
+                    runtime,
+                    row,
+                    user=user,
+                )
+
+
+                inserted += 1
+
+
+            except Exception as e:
+
+                failed += 1
+
+
+                errors.append(
+                    {
+                        "error": str(e),
+                        "data": row,
+                    }
+                )
+
+
+
+        return {
+
+            "module":
+                module_code,
+
+            "inserted":
+                inserted,
+
+            "failed":
+                failed,
+
+            "errors":
+                errors,
+
+        }
