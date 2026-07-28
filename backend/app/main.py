@@ -17,6 +17,9 @@ from app.database.database import engine
 # =====================================================
 
 from app.platform.master_engine.import_log import ImportLog
+from app.platform.master_engine.import_error import (
+    ImportErrorDetail,
+)
 
 
 # =====================================================
