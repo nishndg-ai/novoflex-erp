@@ -5,9 +5,11 @@ from sqlalchemy import (
     Integer,
     String,
     DateTime,
+    Text,
 )
 
 from app.database.base import Base
+
 
 
 class ImportLog(Base):
@@ -19,6 +21,13 @@ class ImportLog(Base):
         Integer,
         primary_key=True,
         index=True,
+    )
+
+
+    batch_no = Column(
+        String(50),
+        unique=True,
+        nullable=False,
     )
 
 
@@ -58,13 +67,31 @@ class ImportLog(Base):
     )
 
 
+    error_summary = Column(
+        Text,
+        nullable=True,
+    )
+
+
     user = Column(
         String(100),
         default="system",
     )
 
 
-    created_at = Column(
+    started_at = Column(
         DateTime,
         default=datetime.utcnow,
+    )
+
+
+    completed_at = Column(
+        DateTime,
+        nullable=True,
+    )
+
+
+    duration_seconds = Column(
+        Integer,
+        nullable=True,
     )
