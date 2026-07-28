@@ -36,47 +36,26 @@ class CrudService:
     # ---------------------------------------------------------
 
     def list(
-
         self,
-
         runtime: RuntimeDefinition,
-
         *,
-
         filters: dict[str, Any] | None = None,
-
         search: str | None = None,
-
         limit: int = 100,
-
         offset: int = 0,
-
         order_by: str | None = None,
-
         descending: bool = False,
-
     ):
 
-
         return self.data_engine.get_records(
-
             table_name=runtime.module.table_name,
-
             filters=filters,
-
             search=search,
-
             limit=limit,
-
             offset=offset,
-
             order_by=order_by,
-
             descending=descending,
-
         )
-
-
 
 
 
@@ -85,25 +64,15 @@ class CrudService:
     # ---------------------------------------------------------
 
     def get(
-
         self,
-
         runtime: RuntimeDefinition,
-
         record_id: int,
-
     ):
 
-
         return self.data_engine.get_record(
-
             runtime.module.table_name,
-
             record_id,
-
         )
-
-
 
 
 
@@ -112,79 +81,52 @@ class CrudService:
     # ---------------------------------------------------------
 
     def create(
-
         self,
-
         runtime: RuntimeDefinition,
-
         values: dict[str, Any],
-
         user: str = "admin",
-
     ):
 
-
         hooks = get_hooks(
-
             runtime.module.module_code
-
         )
 
 
         values = hooks.before_create(
-
             values
+        )
 
+
+        table = self.data_engine.get_table(
+            runtime.module.table_name
         )
 
 
         self.validator.validate(
-
+            self.data_engine.db,
             runtime.fields,
-
             values,
-
+            table,
         )
 
 
 
         record_id = self.data_engine.insert(
-
-            table_name=
-
-                runtime.module.table_name,
-
-
-            module_code=
-
-                runtime.module.module_code,
-
-
-            values=
-
-                values,
-
-
-            user=
-
-                user,
-
+            table_name=runtime.module.table_name,
+            module_code=runtime.module.module_code,
+            values=values,
+            user=user,
         )
 
 
 
         hooks.after_create(
-
             record_id,
-
             values,
-
         )
 
 
         return record_id
-
-
 
 
 
@@ -193,85 +135,52 @@ class CrudService:
     # ---------------------------------------------------------
 
     def update(
-
         self,
-
         runtime: RuntimeDefinition,
-
         record_id: int,
-
         values: dict[str, Any],
-
         user: str = "admin",
-
     ):
 
-
         hooks = get_hooks(
-
             runtime.module.module_code
-
         )
 
 
         values = hooks.before_update(
-
             record_id,
-
             values,
+        )
 
+
+        table = self.data_engine.get_table(
+            runtime.module.table_name
         )
 
 
         self.validator.validate(
-
+            self.data_engine.db,
             runtime.fields,
-
             values,
-
+            table,
         )
 
 
 
         self.data_engine.update(
-
-            table_name=
-
-                runtime.module.table_name,
-
-
-            module_code=
-
-                runtime.module.module_code,
-
-
-            record_id=
-
-                record_id,
-
-
-            values=
-
-                values,
-
-
-            user=
-
-                user,
-
+            table_name=runtime.module.table_name,
+            module_code=runtime.module.module_code,
+            record_id=record_id,
+            values=values,
+            user=user,
         )
 
 
 
         hooks.after_update(
-
             record_id,
-
             values,
-
         )
-
-
 
 
 
@@ -280,60 +189,32 @@ class CrudService:
     # ---------------------------------------------------------
 
     def delete(
-
         self,
-
         runtime: RuntimeDefinition,
-
         record_id: int,
-
         user: str = "admin",
-
     ):
 
-
         hooks = get_hooks(
-
             runtime.module.module_code
-
         )
 
 
         hooks.before_delete(
-
             record_id
-
         )
 
 
 
         self.data_engine.delete(
-
-            table_name=
-
-                runtime.module.table_name,
-
-
-            module_code=
-
-                runtime.module.module_code,
-
-
-            record_id=
-
-                record_id,
-
-
-            user=
-
-                user,
-
+            table_name=runtime.module.table_name,
+            module_code=runtime.module.module_code,
+            record_id=record_id,
+            user=user,
         )
 
 
 
         hooks.after_delete(
-
             record_id
-
         )

@@ -27,6 +27,7 @@ from app.platform.workflow.startup import initialize_workflows
 
 from app.api.login import router as login_router
 from app.api.runtime_data import router as runtime_data_router
+from app.api.imports import router as import_router
 
 
 from app.platform.routes import (
@@ -196,6 +197,11 @@ app.include_router(
 
 app.include_router(
     runtime_data_router
+)
+
+
+app.include_router(
+    import_router
 )
 
 
