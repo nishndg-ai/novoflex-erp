@@ -17,12 +17,34 @@ from app.platform.master_engine.importer import (
     ImportEngine,
 )
 
+from app.platform.master_engine.import_validator import (
+    ImportValidator,
+)
+
 
 
 class ImportService:
     """
     Runtime based Master Data Import Service.
+
+    Flow:
+
+    Excel
+      ↓
+    Import Engine
+      ↓
+    Column Mapping
+      ↓
+    Default Values
+      ↓
+    Validation Report
+      ↓
+    Runtime CRUD
+      ↓
+    Audit + History
     """
+
+
 
     def __init__(
         self,
@@ -32,6 +54,8 @@ class ImportService:
         self.db = db
 
         self.importer = ImportEngine()
+
+        self.import_validator = ImportValidator()
 
         self.runtime_engine = RuntimeEngine(
             db
@@ -61,13 +85,16 @@ class ImportService:
             module_code
         )
 
+
         if runtime is None:
+
             raise ValueError(
                 f"Module '{module_code}' not found"
             )
 
 
         return {
+
             "module":
                 runtime.module.module_code,
 
@@ -84,6 +111,7 @@ class ImportService:
                 self.importer.preview(
                     file_path
                 ),
+
         }
 
 
@@ -117,7 +145,9 @@ class ImportService:
                 key.upper()
             )
 
+
             if db_field:
+
                 mapped[db_field] = value
 
 
@@ -199,9 +229,11 @@ class ImportService:
                 isinstance(value, float)
                 and math.isnan(value)
             ):
+
                 cleaned[key] = None
 
             else:
+
                 cleaned[key] = value
 
 
@@ -240,9 +272,12 @@ class ImportService:
 
 
                     if str(default).lower() == "true":
+
                         default = True
 
+
                     elif str(default).lower() == "false":
+
                         default = False
 
 
@@ -254,7 +289,7 @@ class ImportService:
 
 
     # ---------------------------------------------------------
-    # Import Records
+    # Import Records - Validation Only
     # ---------------------------------------------------------
 
     def import_records(
@@ -264,21 +299,23 @@ class ImportService:
         user: str = "admin",
     ):
 
-
         runtime = self.runtime_engine.build_runtime(
             module_code
         )
 
 
         if runtime is None:
+
             raise ValueError(
                 f"Module '{module_code}' not found"
             )
 
 
+
         rows = self.importer.import_data(
             file_path
         )
+
 
 
         if rows:
@@ -290,76 +327,40 @@ class ImportService:
 
 
 
-        inserted = 0
-
-        failed = 0
-
-        errors = []
+        mapped_rows = []
 
 
+        for row in rows:
 
-        for index, row in enumerate(
-            rows,
-            start=1
-        ):
-
-
-            try:
-
-                mapped_row = self.map_columns(
-                    runtime,
-                    row,
-                )
+            mapped_row = self.map_columns(
+                runtime,
+                row,
+            )
 
 
-                mapped_row = self.clean_values(
-                    mapped_row
-                )
+            mapped_row = self.clean_values(
+                mapped_row
+            )
 
 
-                mapped_row = self.apply_defaults(
-                    runtime,
-                    mapped_row,
-                )
+            mapped_row = self.apply_defaults(
+                runtime,
+                mapped_row,
+            )
 
 
-                self.crud.create(
-                    runtime,
-                    mapped_row,
-                    user=user,
-                )
-
-
-                inserted += 1
+            mapped_rows.append(
+                mapped_row
+            )
 
 
 
-            except Exception as e:
-
-                failed += 1
-
-
-                errors.append(
-                    {
-                        "row": index,
-                        "error": str(e),
-                    }
-                )
+        validation_result = (
+            self.import_validator.validate(
+                runtime,
+                mapped_rows,
+            )
+        )
 
 
-
-        return {
-
-            "module":
-                module_code,
-
-            "inserted":
-                inserted,
-
-            "failed":
-                failed,
-
-            "errors":
-                errors,
-
-        }
+        return validation_result
