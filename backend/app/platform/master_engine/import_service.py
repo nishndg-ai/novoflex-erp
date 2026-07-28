@@ -35,6 +35,10 @@ from app.platform.master_engine.import_error_service import (
 
 
 class ImportService:
+    """
+    Runtime based Master Import Service
+    """
+
 
 
     def __init__(
@@ -44,29 +48,22 @@ class ImportService:
 
         self.db = db
 
-
         self.importer = ImportEngine()
-
 
         self.import_validator = ImportValidator()
 
-
         self.import_log_service = ImportLogService()
 
-
         self.import_error_service = ImportErrorService()
-
 
 
         self.runtime_engine = RuntimeEngine(
             db
         )
 
-
         self.data_engine = RuntimeDataEngine(
             db
         )
-
 
         self.crud = CrudService(
             self.data_engine
@@ -83,7 +80,6 @@ class ImportService:
         module_code: str,
         file_path: str,
     ):
-
 
         runtime = self.runtime_engine.build_runtime(
             module_code
@@ -102,14 +98,17 @@ class ImportService:
             "module":
                 runtime.module.module_code,
 
+
             "table":
                 runtime.module.table_name,
+
 
             "fields":
                 [
                     field.field_name
                     for field in runtime.fields
                 ],
+
 
             "file":
                 self.importer.preview(
@@ -121,7 +120,7 @@ class ImportService:
 
 
     # -----------------------------------------------------
-    # Column Mapping
+    # Mapping
     # -----------------------------------------------------
 
     def map_columns(
@@ -129,7 +128,6 @@ class ImportService:
         runtime,
         row: dict[str, Any],
     ):
-
 
         field_map = {
 
@@ -144,7 +142,7 @@ class ImportService:
         mapped = {}
 
 
-        for key,value in row.items():
+        for key, value in row.items():
 
             field = field_map.get(
                 key.upper()
@@ -161,7 +159,7 @@ class ImportService:
 
 
     # -----------------------------------------------------
-    # Clean Values
+    # Clean
     # -----------------------------------------------------
 
     def clean_values(
@@ -169,19 +167,17 @@ class ImportService:
         values,
     ):
 
-
         cleaned = {}
 
 
-        for key,value in values.items():
+        for key, value in values.items():
 
             if (
-                isinstance(value,float)
+                isinstance(value, float)
                 and math.isnan(value)
             ):
 
                 cleaned[key] = None
-
 
             else:
 
@@ -193,7 +189,7 @@ class ImportService:
 
 
     # -----------------------------------------------------
-    # Apply Defaults
+    # Defaults
     # -----------------------------------------------------
 
     def apply_defaults(
@@ -201,7 +197,6 @@ class ImportService:
         runtime,
         values,
     ):
-
 
         for field in runtime.fields:
 
@@ -226,21 +221,17 @@ class ImportService:
                     default = field.default_value
 
 
-                    if str(default).lower()=="true":
+                    if str(default).lower() == "true":
 
                         default = True
 
 
-                    elif str(default).lower()=="false":
+                    elif str(default).lower() == "false":
 
                         default = False
 
 
-
-                    values[
-                        field.field_name
-                    ] = default
-
+                    values[field.field_name] = default
 
 
         return values
@@ -257,8 +248,7 @@ class ImportService:
         rows,
     ):
 
-
-        prepared = []
+        result = []
 
 
         for row in rows:
@@ -277,21 +267,21 @@ class ImportService:
 
             mapped = self.apply_defaults(
                 runtime,
-                mapped,
-            )
-
-
-            prepared.append(
                 mapped
             )
 
 
-        return prepared
+            result.append(
+                mapped
+            )
+
+
+        return result
 
 
 
     # -----------------------------------------------------
-    # Validate Columns
+    # Column Validation
     # -----------------------------------------------------
 
     def validate_columns(
@@ -299,7 +289,6 @@ class ImportService:
         runtime,
         columns,
     ):
-
 
         required = {
 
@@ -409,16 +398,14 @@ class ImportService:
 
             inserted = 0
 
-
             failed = validation["failed_rows"]
-
 
             errors = validation["errors"]
 
 
 
             # ---------------------------------------------
-            # Save Validation Errors
+            # Save detailed validation errors
             # ---------------------------------------------
 
             for error in errors:
@@ -430,41 +417,49 @@ class ImportService:
                 )
 
 
-                messages = error.get(
+                error_list = error.get(
                     "errors",
                     []
                 )
 
 
-                for message in messages:
+                for item in error_list:
 
 
                     self.import_error_service.create(
 
                         self.db,
 
-                        batch_no=
-                            import_log.batch_no,
+                        batch_no=import_log.batch_no,
 
-                        row_number=
-                            row_number,
+                        row_number=row_number,
 
-                        error_message=
-                            message,
+                        column_name=item.get(
+                            "column"
+                        ),
+
+                        invalid_value=str(
+                            item.get(
+                                "value"
+                            )
+                        ),
+
+                        error_message=item.get(
+                            "message"
+                        ),
 
                     )
 
 
 
             # ---------------------------------------------
-            # Insert Valid Data
+            # Insert valid records
             # ---------------------------------------------
 
             for row in validation["valid_data"]:
 
 
                 try:
-
 
                     self.crud.create(
 
@@ -491,8 +486,7 @@ class ImportService:
 
                         self.db,
 
-                        batch_no=
-                            import_log.batch_no,
+                        batch_no=import_log.batch_no,
 
                         row_number=0,
 
@@ -518,17 +512,13 @@ class ImportService:
 
             return {
 
-                "module":
-                    module_code,
+                "module": module_code,
 
-                "inserted":
-                    inserted,
+                "inserted": inserted,
 
-                "failed":
-                    failed,
+                "failed": failed,
 
-                "errors":
-                    errors,
+                "errors": errors,
 
             }
 
