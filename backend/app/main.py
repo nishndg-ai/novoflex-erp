@@ -13,6 +13,13 @@ from app.database.database import engine
 
 
 # =====================================================
+# Database Models
+# =====================================================
+
+from app.platform.master_engine.import_log import ImportLog
+
+
+# =====================================================
 # Platform Startup
 # =====================================================
 

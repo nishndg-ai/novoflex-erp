@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.platform.runtime.runtime_engine import RuntimeEngine
+
 from app.platform.runtime.runtime_data_engine import (
     RuntimeDataEngine,
 )
@@ -21,12 +22,36 @@ from app.platform.master_engine.import_validator import (
     ImportValidator,
 )
 
+from app.platform.master_engine.import_log_service import (
+    ImportLogService,
+)
+
 
 
 class ImportService:
     """
     Runtime based Master Data Import Service.
+
+    Flow:
+
+    Excel
+      ↓
+    Import Engine
+      ↓
+    Import Log
+      ↓
+    Column Mapping
+      ↓
+    Default Values
+      ↓
+    Validation
+      ↓
+    Runtime CRUD
+      ↓
+    Audit + History
     """
+
+
 
     def __init__(
         self,
@@ -39,13 +64,18 @@ class ImportService:
 
         self.import_validator = ImportValidator()
 
+        self.import_log_service = ImportLogService()
+
+
         self.runtime_engine = RuntimeEngine(
             db
         )
 
+
         self.data_engine = RuntimeDataEngine(
             db
         )
+
 
         self.crud = CrudService(
             self.data_engine
@@ -224,7 +254,7 @@ class ImportService:
 
 
     # ---------------------------------------------------------
-    # Apply Runtime Defaults
+    # Apply Defaults
     # ---------------------------------------------------------
 
     def apply_defaults(
@@ -312,7 +342,7 @@ class ImportService:
 
 
     # ---------------------------------------------------------
-    # Validate Only
+    # Validate Import
     # ---------------------------------------------------------
 
     def validate_import(
@@ -327,26 +357,15 @@ class ImportService:
         )
 
 
-        if runtime is None:
-
-            raise ValueError(
-                f"Module '{module_code}' not found"
-            )
-
-
-
         rows = self.importer.import_data(
             file_path
         )
 
 
-        if rows:
-
-            self.validate_columns(
-                runtime,
-                list(rows[0].keys()),
-            )
-
+        self.validate_columns(
+            runtime,
+            list(rows[0].keys()),
+        )
 
 
         prepared_rows = self.prepare_rows(
@@ -392,7 +411,17 @@ class ImportService:
         )
 
 
-        if rows:
+        import_log = self.import_log_service.create(
+            self.db,
+            module=module_code,
+            file_name=file_path,
+            total_rows=len(rows),
+            user=user,
+        )
+
+
+
+        try:
 
             self.validate_columns(
                 runtime,
@@ -400,69 +429,86 @@ class ImportService:
             )
 
 
-
-        prepared_rows = self.prepare_rows(
-            runtime,
-            rows,
-        )
-
+            prepared_rows = self.prepare_rows(
+                runtime,
+                rows,
+            )
 
 
-        validation = self.import_validator.validate(
-            runtime,
-            prepared_rows,
-        )
+            validation = self.import_validator.validate(
+                runtime,
+                prepared_rows,
+            )
 
 
+            inserted = 0
 
-        inserted = 0
+            failed = validation["failed_rows"]
 
-        failed = validation["failed_rows"]
-
-        errors = validation["errors"]
+            errors = validation["errors"]
 
 
 
-        for row in validation["valid_data"]:
+            for row in validation["valid_data"]:
 
-            try:
+                try:
 
-                self.crud.create(
-                    runtime,
-                    row,
-                    user=user,
-                )
-
-
-                inserted += 1
+                    self.crud.create(
+                        runtime,
+                        row,
+                        user=user,
+                    )
 
 
-            except Exception as e:
-
-                failed += 1
+                    inserted += 1
 
 
-                errors.append(
-                    {
-                        "error": str(e),
-                        "data": row,
-                    }
-                )
+                except Exception as e:
+
+                    failed += 1
+
+
+                    errors.append(
+                        {
+                            "error": str(e),
+                            "data": row,
+                        }
+                    )
 
 
 
-        return {
+            self.import_log_service.complete(
+                self.db,
+                import_log,
+                success_rows=inserted,
+                failed_rows=failed,
+            )
 
-            "module":
-                module_code,
 
-            "inserted":
-                inserted,
 
-            "failed":
-                failed,
+            return {
 
-            "errors":
-                errors,
+                "module":
+                    module_code,
 
-        }
+                "inserted":
+                    inserted,
+
+                "failed":
+                    failed,
+
+                "errors":
+                    errors,
+
+            }
+
+
+        except Exception:
+
+
+            import_log.status = "FAILED"
+
+            self.db.commit()
+
+
+            raise
