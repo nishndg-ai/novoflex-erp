@@ -38,11 +38,9 @@ def login(
     db: Session = Depends(get_db),
 ):
 
-
     username = user.get(
         "username"
     )
-
 
     password = user.get(
         "password"
@@ -61,7 +59,6 @@ def login(
 
 
     if not authenticated_user:
-
 
         return {
 
@@ -119,6 +116,10 @@ def login(
             "role":
                 role_name,
 
+
+            "permissions":
+                permissions,
+
         }
 
     )
@@ -126,7 +127,6 @@ def login(
 
 
     return {
-
 
         "success": True,
 
@@ -136,7 +136,6 @@ def login(
 
 
         "user": {
-
 
             "id":
                 authenticated_user.id,
@@ -184,7 +183,6 @@ def current_user(
     ),
 
 ):
-
 
     return {
 
@@ -249,6 +247,24 @@ def token_login(
 
 
 
+    permissions = (
+
+        permission_service.get_role_permissions(
+
+            db,
+
+            role_name,
+
+        )
+
+        if role_name
+
+        else []
+
+    )
+
+
+
     token = token_service.create_access_token(
 
         {
@@ -264,9 +280,14 @@ def token_login(
             "role":
                 role_name,
 
+
+            "permissions":
+                permissions,
+
         }
 
     )
+
 
 
     return {

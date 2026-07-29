@@ -16,6 +16,9 @@ from app.schemas.company import (
 
 from app.services.company_service import company_service
 
+from app.core.permissions import require_permission
+
+
 
 router = APIRouter(
     prefix="/companies",
@@ -23,15 +26,36 @@ router = APIRouter(
 )
 
 
+
+# =====================================================
+# GET ALL COMPANIES
+# Permission: company -> view
+# =====================================================
+
 @router.get(
     "/",
     response_model=List[CompanyResponse],
 )
 def get_companies(
     db: Session = Depends(get_db),
+
+    current_user: dict = Depends(
+        require_permission(
+            "company",
+            "view"
+        )
+    ),
 ):
+
     return company_service.get_all(db)
 
+
+
+
+# =====================================================
+# GET SINGLE COMPANY
+# Permission: company -> view
+# =====================================================
 
 @router.get(
     "/{company_id}",
@@ -39,18 +63,40 @@ def get_companies(
 )
 def get_company(
     company_id: int,
+
     db: Session = Depends(get_db),
+
+    current_user: dict = Depends(
+        require_permission(
+            "company",
+            "view"
+        )
+    ),
 ):
-    company = company_service.get_by_id(db, company_id)
+
+    company = company_service.get_by_id(
+        db,
+        company_id
+    )
+
 
     if company is None:
+
         raise HTTPException(
             status_code=404,
             detail="Company not found",
         )
 
+
     return company
 
+
+
+
+# =====================================================
+# CREATE COMPANY
+# Permission: company -> create
+# =====================================================
 
 @router.post(
     "/",
@@ -58,19 +104,45 @@ def get_company(
 )
 def create_company(
     company: CompanyCreate,
+
     db: Session = Depends(get_db),
+
+    current_user: dict = Depends(
+        require_permission(
+            "company",
+            "create"
+        )
+    ),
 ):
+
     try:
-        db_obj = Company(**company.model_dump())
-        return company_service.create(db, db_obj)
+
+        db_obj = Company(
+            **company.model_dump()
+        )
+
+        return company_service.create(
+            db,
+            db_obj
+        )
+
 
     except IntegrityError:
+
         db.rollback()
+
         raise HTTPException(
             status_code=400,
             detail="Company code already exists.",
         )
 
+
+
+
+# =====================================================
+# UPDATE COMPANY
+# Permission: company -> edit
+# =====================================================
 
 @router.put(
     "/{company_id}",
@@ -78,44 +150,100 @@ def create_company(
 )
 def update_company(
     company_id: int,
+
     company: CompanyUpdate,
+
     db: Session = Depends(get_db),
+
+    current_user: dict = Depends(
+        require_permission(
+            "company",
+            "edit"
+        )
+    ),
 ):
-    db_obj = company_service.get_by_id(db, company_id)
+
+    db_obj = company_service.get_by_id(
+        db,
+        company_id
+    )
+
 
     if db_obj is None:
+
         raise HTTPException(
             status_code=404,
             detail="Company not found",
         )
 
-    try:
-        for key, value in company.model_dump().items():
-            setattr(db_obj, key, value)
 
-        return company_service.update(db, db_obj)
+    try:
+
+        for key, value in company.model_dump().items():
+
+            setattr(
+                db_obj,
+                key,
+                value
+            )
+
+
+        return company_service.update(
+            db,
+            db_obj
+        )
+
 
     except IntegrityError:
+
         db.rollback()
+
         raise HTTPException(
             status_code=400,
             detail="Company code already exists.",
         )
 
 
-@router.delete("/{company_id}")
+
+
+# =====================================================
+# DELETE COMPANY
+# Permission: company -> delete
+# =====================================================
+
+@router.delete(
+    "/{company_id}"
+)
 def delete_company(
     company_id: int,
+
     db: Session = Depends(get_db),
+
+    current_user: dict = Depends(
+        require_permission(
+            "company",
+            "delete"
+        )
+    ),
 ):
-    obj = company_service.soft_delete(db, company_id)
+
+    obj = company_service.soft_delete(
+        db,
+        company_id
+    )
+
 
     if obj is None:
+
         raise HTTPException(
             status_code=404,
             detail="Company not found",
         )
 
+
     return {
-        "message": "Company deleted successfully"
+
+        "message":
+            "Company deleted successfully"
+
     }
