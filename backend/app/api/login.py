@@ -6,12 +6,16 @@ from app.database.database import get_db
 
 from app.services.auth_service import AuthService
 
+from app.services.permission_service import PermissionService
+
 
 
 router = APIRouter()
 
 
 auth_service = AuthService()
+
+permission_service = PermissionService()
 
 
 
@@ -57,6 +61,24 @@ def login(
 
 
 
+    role_name = (
+        authenticated_user.role.code
+        if authenticated_user.role
+        else None
+    )
+
+
+    permissions = (
+        permission_service.get_role_permissions(
+            db,
+            role_name,
+        )
+        if role_name
+        else []
+    )
+
+
+
     return {
 
 
@@ -82,8 +104,8 @@ def login(
                 authenticated_user.full_name,
 
 
-            "role_id":
-                authenticated_user.role_id,
+            "role":
+                role_name,
 
 
             "company_id":
@@ -94,6 +116,10 @@ def login(
                 authenticated_user.plant_id,
 
 
-        }
+        },
+
+
+        "permissions":
+            permissions,
 
     }
