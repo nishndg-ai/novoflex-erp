@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends
 
+from fastapi.security import OAuth2PasswordRequestForm
+
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
@@ -10,9 +12,12 @@ from app.services.permission_service import PermissionService
 
 from app.services.token_service import TokenService
 
+from app.core.security import get_current_user
+
 
 
 router = APIRouter()
+
 
 
 auth_service = AuthService()
@@ -22,6 +27,10 @@ permission_service = PermissionService()
 token_service = TokenService()
 
 
+
+# =====================================================
+# JSON Login (Frontend)
+# =====================================================
 
 @router.post("/login")
 def login(
@@ -52,6 +61,7 @@ def login(
 
 
     if not authenticated_user:
+
 
         return {
 
@@ -156,5 +166,116 @@ def login(
 
         "permissions":
             permissions,
+
+    }
+
+
+
+
+# =====================================================
+# JWT Protected Test API
+# =====================================================
+
+@router.get("/me")
+def current_user(
+
+    current_user: dict = Depends(
+        get_current_user
+    ),
+
+):
+
+
+    return {
+
+        "success": True,
+
+        "user":
+            current_user,
+
+    }
+
+
+
+
+# =====================================================
+# OAuth2 Login (Swagger Authorize)
+# =====================================================
+
+@router.post("/token")
+def token_login(
+
+    form_data: OAuth2PasswordRequestForm = Depends(),
+
+    db: Session = Depends(get_db),
+
+):
+
+
+    authenticated_user = auth_service.authenticate(
+
+        db,
+
+        form_data.username,
+
+        form_data.password,
+
+    )
+
+
+    if not authenticated_user:
+
+
+        return {
+
+            "success": False,
+
+            "message":
+                "Invalid Username or Password",
+
+        }
+
+
+
+    role_name = (
+
+        authenticated_user.role.code
+
+        if authenticated_user.role
+
+        else None
+
+    )
+
+
+
+    token = token_service.create_access_token(
+
+        {
+
+            "user_id":
+                authenticated_user.id,
+
+
+            "username":
+                authenticated_user.username,
+
+
+            "role":
+                role_name,
+
+        }
+
+    )
+
+
+    return {
+
+        "access_token":
+            token,
+
+
+        "token_type":
+            "bearer",
 
     }
