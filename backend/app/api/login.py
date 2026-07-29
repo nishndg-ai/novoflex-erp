@@ -8,6 +8,8 @@ from app.services.auth_service import AuthService
 
 from app.services.permission_service import PermissionService
 
+from app.services.token_service import TokenService
+
 
 
 router = APIRouter()
@@ -16,6 +18,8 @@ router = APIRouter()
 auth_service = AuthService()
 
 permission_service = PermissionService()
+
+token_service = TokenService()
 
 
 
@@ -49,7 +53,6 @@ def login(
 
     if not authenticated_user:
 
-
         return {
 
             "success": False,
@@ -62,19 +65,52 @@ def login(
 
 
     role_name = (
+
         authenticated_user.role.code
+
         if authenticated_user.role
+
         else None
+
     )
 
 
+
     permissions = (
+
         permission_service.get_role_permissions(
+
             db,
+
             role_name,
+
         )
+
         if role_name
+
         else []
+
+    )
+
+
+
+    token = token_service.create_access_token(
+
+        {
+
+            "user_id":
+                authenticated_user.id,
+
+
+            "username":
+                authenticated_user.username,
+
+
+            "role":
+                role_name,
+
+        }
+
     )
 
 
@@ -86,7 +122,7 @@ def login(
 
 
         "token":
-            "NOVOFLEX_TOKEN",
+            token,
 
 
         "user": {
@@ -114,7 +150,6 @@ def login(
 
             "plant_id":
                 authenticated_user.plant_id,
-
 
         },
 
