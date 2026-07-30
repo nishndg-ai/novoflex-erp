@@ -3,8 +3,13 @@ from __future__ import annotations
 from typing import Any
 
 from app.platform.crud.service import CrudService
-from app.platform.runtime.runtime_data_engine import RuntimeDataEngine
-from app.platform.runtime.runtime_engine import RuntimeEngine
+from app.platform.runtime.runtime_data_engine import (
+    RuntimeDataEngine,
+)
+from app.platform.runtime.runtime_engine import (
+    RuntimeEngine,
+)
+
 
 
 class CrudEngine:
@@ -12,13 +17,24 @@ class CrudEngine:
     Generic metadata-driven CRUD engine.
     """
 
+
     def __init__(
         self,
         runtime_engine: RuntimeEngine,
         data_engine: RuntimeDataEngine,
     ):
+
         self.runtime_engine = runtime_engine
-        self.service = CrudService(data_engine)
+
+        self.service = CrudService(
+            data_engine
+        )
+
+
+
+    # ---------------------------------------------------------
+    # LIST
+    # ---------------------------------------------------------
 
     def list(
         self,
@@ -30,19 +46,39 @@ class CrudEngine:
         offset: int = 0,
         order_by: str | None = None,
         descending: bool = False,
+        include_deleted: bool = False,
     ):
 
-        runtime = self.runtime_engine.build_runtime(module_code)
+        runtime = self.runtime_engine.build_runtime(
+            module_code
+        )
+
 
         return self.service.list(
+
             runtime,
+
             filters=filters,
+
             search=search,
+
             limit=limit,
+
             offset=offset,
+
             order_by=order_by,
+
             descending=descending,
+
+            include_deleted=include_deleted,
+
         )
+
+
+
+    # ---------------------------------------------------------
+    # GET
+    # ---------------------------------------------------------
 
     def get(
         self,
@@ -50,9 +86,24 @@ class CrudEngine:
         record_id: int,
     ):
 
-        runtime = self.runtime_engine.build_runtime(module_code)
+        runtime = self.runtime_engine.build_runtime(
+            module_code
+        )
 
-        return self.service.get(runtime, record_id)
+
+        return self.service.get(
+
+            runtime,
+
+            record_id,
+
+        )
+
+
+
+    # ---------------------------------------------------------
+    # CREATE
+    # ---------------------------------------------------------
 
     def create(
         self,
@@ -60,9 +111,24 @@ class CrudEngine:
         values: dict[str, Any],
     ):
 
-        runtime = self.runtime_engine.build_runtime(module_code)
+        runtime = self.runtime_engine.build_runtime(
+            module_code
+        )
 
-        return self.service.create(runtime, values)
+
+        return self.service.create(
+
+            runtime,
+
+            values,
+
+        )
+
+
+
+    # ---------------------------------------------------------
+    # UPDATE
+    # ---------------------------------------------------------
 
     def update(
         self,
@@ -71,9 +137,26 @@ class CrudEngine:
         values: dict[str, Any],
     ):
 
-        runtime = self.runtime_engine.build_runtime(module_code)
+        runtime = self.runtime_engine.build_runtime(
+            module_code
+        )
 
-        self.service.update(runtime, record_id, values)
+
+        self.service.update(
+
+            runtime,
+
+            record_id,
+
+            values,
+
+        )
+
+
+
+    # ---------------------------------------------------------
+    # DELETE
+    # ---------------------------------------------------------
 
     def delete(
         self,
@@ -81,6 +164,40 @@ class CrudEngine:
         record_id: int,
     ):
 
-        runtime = self.runtime_engine.build_runtime(module_code)
+        runtime = self.runtime_engine.build_runtime(
+            module_code
+        )
 
-        self.service.delete(runtime, record_id)
+
+        self.service.delete(
+
+            runtime,
+
+            record_id,
+
+        )
+
+
+
+    # ---------------------------------------------------------
+    # RESTORE
+    # ---------------------------------------------------------
+
+    def restore(
+        self,
+        module_code: str,
+        record_id: int,
+    ):
+
+        runtime = self.runtime_engine.build_runtime(
+            module_code
+        )
+
+
+        self.service.restore(
+
+            runtime,
+
+            record_id,
+
+        )

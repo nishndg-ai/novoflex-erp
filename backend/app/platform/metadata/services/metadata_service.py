@@ -135,10 +135,10 @@ class MetadataService:
         # ==========================================================
 
 
-        module_provisioning_service.provision_permissions(
-            db,
-            created_module.id,
-        )
+        module_provisioning_service.provision_module(
+    db,
+    created_module,
+)
 
 
 

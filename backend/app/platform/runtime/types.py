@@ -246,11 +246,26 @@ class PermissionDefinition(BaseModel):
 
     id: int
 
+    role_name: str
+
+    can_view: bool = True
+
+    can_create: bool = False
+
+    can_edit: bool = False
+
+    can_delete: bool = False
+
+    can_export: bool = False
+
+    can_import: bool = False
+
+    can_approve: bool = False
+
 
     model_config = ConfigDict(
         from_attributes=True
     )
-
 
 
 # ==========================================================

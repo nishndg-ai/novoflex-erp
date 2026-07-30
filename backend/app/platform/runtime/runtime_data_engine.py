@@ -5,7 +5,6 @@ from typing import Any
 from sqlalchemy import (
     MetaData,
     Table,
-    delete,
     insert,
     select,
     update,
@@ -33,9 +32,10 @@ class RuntimeDataEngine:
     with automatic audit and history tracking.
     """
 
-
-
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+    ):
 
         self.db = db
 
@@ -56,16 +56,12 @@ class RuntimeDataEngine:
     # ---------------------------------------------------------
 
     def get_table(
-
         self,
-
-        table_name: str
-
+        table_name: str,
     ) -> Table:
 
 
         if table_name not in self._tables:
-
 
             self._tables[table_name] = Table(
 
@@ -82,32 +78,21 @@ class RuntimeDataEngine:
 
 
 
-
-
-    # ---------------------------------------------------------
+       # ---------------------------------------------------------
     # List Records
     # ---------------------------------------------------------
 
     def get_records(
-
         self,
-
         table_name: str,
-
         *,
-
         filters: dict[str, Any] | None = None,
-
         search: str | None = None,
-
         limit: int = 100,
-
         offset: int = 0,
-
         order_by: str | None = None,
-
         descending: bool = False,
-
+        include_deleted: bool = False,
     ) -> dict[str, Any]:
 
 
@@ -130,24 +115,19 @@ class RuntimeDataEngine:
 
             descending=descending,
 
+            include_deleted=include_deleted,
+
         )
-
-
-
-
+    
 
     # ---------------------------------------------------------
     # Get Record
     # ---------------------------------------------------------
 
     def get_record(
-
         self,
-
         table_name: str,
-
         record_id: int,
-
     ) -> dict[str, Any] | None:
 
 
@@ -173,28 +153,32 @@ class RuntimeDataEngine:
 
 
 
-
-
     # ---------------------------------------------------------
     # Insert
     # ---------------------------------------------------------
 
     def insert(
-
         self,
-
         table_name: str,
-
         module_code: str,
-
         values: dict[str, Any],
-
         user: str = "system",
-
     ) -> int:
 
 
         table = self.get_table(table_name)
+
+
+        values.setdefault(
+            "is_active",
+            True,
+        )
+
+
+        values.setdefault(
+            "version",
+            1,
+        )
 
 
         stmt = (
@@ -220,9 +204,7 @@ class RuntimeDataEngine:
         self.db.commit()
 
 
-
         module_name = module_code.upper()
-
 
 
         self.history.add(
@@ -246,7 +228,6 @@ class RuntimeDataEngine:
         )
 
 
-
         self.audit.create_log(
 
             db=self.db,
@@ -268,31 +249,21 @@ class RuntimeDataEngine:
 
 
 
-
-
     # ---------------------------------------------------------
     # Update
     # ---------------------------------------------------------
 
     def update(
-
         self,
-
         table_name: str,
-
         module_code: str,
-
         record_id: int,
-
         values: dict[str, Any],
-
         user: str = "system",
-
     ) -> None:
 
 
         table = self.get_table(table_name)
-
 
 
         old_data = self.get_record(
@@ -302,7 +273,6 @@ class RuntimeDataEngine:
             record_id,
 
         )
-
 
 
         stmt = (
@@ -325,9 +295,7 @@ class RuntimeDataEngine:
         self.db.commit()
 
 
-
         module_name = module_code.upper()
-
 
 
         self.history.add(
@@ -353,7 +321,6 @@ class RuntimeDataEngine:
         )
 
 
-
         self.audit.create_log(
 
             db=self.db,
@@ -374,29 +341,20 @@ class RuntimeDataEngine:
 
 
 
-
-
     # ---------------------------------------------------------
-    # Delete
+    # Soft Delete
     # ---------------------------------------------------------
 
     def delete(
-
         self,
-
         table_name: str,
-
         module_code: str,
-
         record_id: int,
-
         user: str = "system",
-
     ) -> None:
 
 
         table = self.get_table(table_name)
-
 
 
         old_data = self.get_record(
@@ -408,14 +366,21 @@ class RuntimeDataEngine:
         )
 
 
-
         stmt = (
 
-            delete(table)
+            update(table)
 
             .where(
 
                 table.c.id == record_id
+
+            )
+
+            .values(
+
+                is_active=False,
+
+                version=table.c.version + 1,
 
             )
 
@@ -446,7 +411,13 @@ class RuntimeDataEngine:
 
             changes={
 
-                "old": old_data
+                "old": old_data,
+
+                "new": {
+
+                    "is_active": False
+
+                }
 
             }
 
@@ -467,5 +438,119 @@ class RuntimeDataEngine:
             record_id=record_id,
 
             old_data=old_data,
+
+            new_data={
+
+                "is_active": False
+
+            },
+
+        )
+            # ---------------------------------------------------------
+    # Restore Soft Deleted Record
+    # ---------------------------------------------------------
+
+    def restore(
+        self,
+        table_name: str,
+        module_code: str,
+        record_id: int,
+        user: str = "system",
+    ) -> None:
+
+
+        table = self.get_table(
+            table_name
+        )
+
+
+        old_data = self.get_record(
+            table_name,
+            record_id,
+        )
+
+
+        if old_data is None:
+            raise ValueError(
+                "Record not found"
+            )
+
+
+        stmt = (
+
+            update(table)
+
+            .where(
+                table.c.id == record_id
+            )
+
+            .values(
+
+                is_active=True,
+
+                version=table.c.version + 1,
+
+            )
+
+        )
+
+
+        self.db.execute(stmt)
+
+        self.db.commit()
+
+
+
+        module_name = module_code.upper()
+
+
+
+        self.history.add(
+
+            db=self.db,
+
+            module=module_name,
+
+            record_id=record_id,
+
+            action="RESTORE",
+
+            user=user,
+
+            changes={
+
+                "old": old_data,
+
+                "new": {
+
+                    "is_active": True
+
+                }
+
+            }
+
+        )
+
+
+
+        self.audit.create_log(
+
+            db=self.db,
+
+            action="RESTORE",
+
+            module=module_name,
+
+            user=user,
+
+            record_id=record_id,
+
+            old_data=old_data,
+
+            new_data={
+
+                "is_active": True
+
+            },
 
         )

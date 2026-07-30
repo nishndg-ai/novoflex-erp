@@ -1,4 +1,8 @@
-from datetime import datetime, UTC
+from __future__ import annotations
+
+from datetime import datetime, date
+from decimal import Decimal
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -9,6 +13,82 @@ from app.platform.master_engine.models.master_history import (
 
 
 class HistoryEngine:
+    """
+    BLUISH History Engine
+
+    Stores record change history.
+
+    Converts non JSON serializable
+    Python objects into safe values.
+    """
+
+
+
+    def serialize(
+        self,
+        value: Any,
+    ) -> Any:
+
+
+        if isinstance(
+            value,
+            dict,
+        ):
+
+            return {
+
+                key: self.serialize(
+                    item
+                )
+
+                for key, item in value.items()
+
+            }
+
+
+
+        if isinstance(
+            value,
+            list,
+        ):
+
+            return [
+
+                self.serialize(
+                    item
+                )
+
+                for item in value
+
+            ]
+
+
+
+        if isinstance(
+            value,
+            (
+                datetime,
+                date,
+            ),
+        ):
+
+            return value.isoformat()
+
+
+
+        if isinstance(
+            value,
+            Decimal,
+        ):
+
+            return float(value)
+
+
+
+        return value
+
+
+
 
 
     def add(
@@ -18,9 +98,23 @@ class HistoryEngine:
         record_id: int,
         action: str,
         user: str,
-        changes=None,
-        reason: str | None = None,
+        changes: dict,
     ):
+
+
+        serialized_changes = self.serialize(
+            changes
+        )
+
+
+        old_data = serialized_changes.get(
+            "old"
+        )
+
+
+        new_data = serialized_changes.get(
+            "new"
+        )
 
 
         history = MasterHistory(
@@ -31,23 +125,11 @@ class HistoryEngine:
 
             action=action,
 
-            old_data=(
-                changes.get("old")
-                if changes
-                else None
-            ),
+            old_data=old_data,
 
-            new_data=(
-                changes.get("new")
-                if changes
-                else None
-            ),
-
-            reason=reason,
+            new_data=new_data,
 
             changed_by=user,
-
-            changed_at=datetime.now(UTC),
 
         )
 
@@ -60,40 +142,3 @@ class HistoryEngine:
 
 
         return history
-
-
-
-    def get(
-
-        self,
-
-        db: Session,
-
-        module: str,
-
-        record_id: int,
-
-    ):
-
-
-        return (
-
-            db.query(MasterHistory)
-
-            .filter(
-
-                MasterHistory.module == module,
-
-                MasterHistory.record_id == record_id,
-
-            )
-
-            .order_by(
-
-                MasterHistory.changed_at.desc()
-
-            )
-
-            .all()
-
-        )
