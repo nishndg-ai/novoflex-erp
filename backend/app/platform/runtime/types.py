@@ -29,7 +29,19 @@ class ModuleDefinition(BaseModel):
     table_name: str
     api_endpoint: str
 
+    # ======================================================
+    # DATA SECURITY SCOPE
+    #
+    # GLOBAL  -> No restriction
+    # COMPANY -> company_id based filtering
+    # PLANT   -> plant_id based filtering
+    # ======================================================
+
+    data_scope: str = "GLOBAL"
+
+
     page_size: int
+
 
     supports_excel: bool
     supports_workflow: bool
@@ -128,12 +140,9 @@ class ViewComponentDefinition(BaseModel):
 
     component_key: str
 
-
     title: str | None = None
 
     field_name: str | None = None
-
-
 
     row_no: int
 
@@ -141,35 +150,18 @@ class ViewComponentDefinition(BaseModel):
 
     column_span: int
 
-
-
     width: int | None = None
 
     height: int | None = None
 
 
-
-    # Runtime UI configuration
-    #
-    # Example:
-    #
-    # {
-    #     "control_type": "checkbox"
-    # }
-    #
     properties: dict[str, Any] | None = None
 
-
-
-    # Backward compatibility
     config: dict[str, Any] | None = None
-
-
 
     display_order: int
 
     is_visible: bool
-
 
 
     model_config = ConfigDict(
@@ -192,29 +184,22 @@ class ViewDefinition(BaseModel):
 
     view_type: str
 
-
-
     title: str | None = None
 
     description: str | None = None
 
     icon: str | None = None
 
-
-
     display_order: int
-
 
     is_default: bool
 
     is_active: bool
 
 
-
     components: list[ViewComponentDefinition] = Field(
         default_factory=list
     )
-
 
 
     model_config = ConfigDict(
@@ -268,6 +253,7 @@ class PermissionDefinition(BaseModel):
     model_config = ConfigDict(
         from_attributes=True
     )
+
 
 
 # ==========================================================

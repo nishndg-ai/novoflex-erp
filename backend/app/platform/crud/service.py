@@ -3,7 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 from app.platform.crud.module_hooks import get_hooks
-from app.platform.crud.validator import RuntimeValidator
+
+from app.platform.crud.validator import (
+    RuntimeValidator,
+)
 
 from app.platform.runtime.runtime_data_engine import (
     RuntimeDataEngine,
@@ -18,7 +21,14 @@ from app.platform.runtime.types import (
 class CrudService:
     """
     Generic CRUD service for runtime modules.
+
+    Carries:
+    - user security context
+    - module data scope
+    for company / plant data isolation.
     """
+
+
 
     def __init__(
         self,
@@ -46,6 +56,7 @@ class CrudService:
         order_by: str | None = None,
         descending: bool = False,
         include_deleted: bool = False,
+        user_context: dict | None = None,
     ):
 
         return self.data_engine.get_records(
@@ -66,6 +77,10 @@ class CrudService:
 
             include_deleted=include_deleted,
 
+            user_context=user_context,
+
+            data_scope=runtime.module.data_scope,
+
         )
 
 
@@ -78,11 +93,19 @@ class CrudService:
         self,
         runtime: RuntimeDefinition,
         record_id: int,
+        user_context: dict | None = None,
     ):
 
         return self.data_engine.get_record(
+
             runtime.module.table_name,
+
             record_id,
+
+            user_context=user_context,
+
+            data_scope=runtime.module.data_scope,
+
         )
 
 
@@ -95,7 +118,7 @@ class CrudService:
         self,
         runtime: RuntimeDefinition,
         values: dict[str, Any],
-        user: str = "admin",
+        user_context: dict | None = None,
     ):
 
         hooks = get_hooks(
@@ -114,12 +137,19 @@ class CrudService:
 
 
         self.validator.validate(
+
             self.data_engine.db,
+
             runtime.fields,
+
             values,
+
             table,
+
             is_update=False,
+
         )
+
 
 
         record_id = self.data_engine.insert(
@@ -130,14 +160,19 @@ class CrudService:
 
             values=values,
 
-            user=user,
+            user_context=user_context,
+
+            data_scope=runtime.module.data_scope,
 
         )
 
 
         hooks.after_create(
+
             record_id,
+
             values,
+
         )
 
 
@@ -154,7 +189,7 @@ class CrudService:
         runtime: RuntimeDefinition,
         record_id: int,
         values: dict[str, Any],
-        user: str = "admin",
+        user_context: dict | None = None,
     ):
 
         hooks = get_hooks(
@@ -163,9 +198,13 @@ class CrudService:
 
 
         values = hooks.before_update(
+
             record_id,
+
             values,
+
         )
+
 
 
         table = self.data_engine.get_table(
@@ -178,21 +217,34 @@ class CrudService:
         validation_values["id"] = record_id
 
 
+
         self.validator.validate(
+
             self.data_engine.db,
+
             runtime.fields,
+
             validation_values,
+
             table,
+
             is_update=True,
+
         )
+
 
 
         clean_values = values.copy()
 
+
         clean_values.pop(
+
             "id",
+
             None,
+
         )
+
 
 
         self.data_engine.update(
@@ -205,15 +257,21 @@ class CrudService:
 
             values=clean_values,
 
-            user=user,
+            user_context=user_context,
+
+            data_scope=runtime.module.data_scope,
 
         )
 
 
         hooks.after_update(
+
             record_id,
+
             clean_values,
+
         )
+
 
 
     # ---------------------------------------------------------
@@ -224,7 +282,7 @@ class CrudService:
         self,
         runtime: RuntimeDefinition,
         record_id: int,
-        user: str = "admin",
+        user_context: dict | None = None,
     ):
 
         self.data_engine.restore(
@@ -235,10 +293,13 @@ class CrudService:
 
             record_id=record_id,
 
-            user=user,
+            user_context=user_context,
+
+            data_scope=runtime.module.data_scope,
 
         )
-        
+
+
 
     # ---------------------------------------------------------
     # DELETE
@@ -248,7 +309,7 @@ class CrudService:
         self,
         runtime: RuntimeDefinition,
         record_id: int,
-        user: str = "admin",
+        user_context: dict | None = None,
     ):
 
         hooks = get_hooks(
@@ -261,6 +322,7 @@ class CrudService:
         )
 
 
+
         self.data_engine.delete(
 
             table_name=runtime.module.table_name,
@@ -269,7 +331,9 @@ class CrudService:
 
             record_id=record_id,
 
-            user=user,
+            user_context=user_context,
+
+            data_scope=runtime.module.data_scope,
 
         )
 

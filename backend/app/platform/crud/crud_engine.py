@@ -3,9 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from app.platform.crud.service import CrudService
+
 from app.platform.runtime.runtime_data_engine import (
     RuntimeDataEngine,
 )
+
 from app.platform.runtime.runtime_engine import (
     RuntimeEngine,
 )
@@ -15,16 +17,23 @@ from app.platform.runtime.runtime_engine import (
 class CrudEngine:
     """
     Generic metadata-driven CRUD engine.
+
+    Carries user security context
+    for company / plant level data isolation.
     """
+
 
 
     def __init__(
         self,
         runtime_engine: RuntimeEngine,
         data_engine: RuntimeDataEngine,
+        user_context: dict | None = None,
     ):
 
         self.runtime_engine = runtime_engine
+
+        self.user_context = user_context or {}
 
         self.service = CrudService(
             data_engine
@@ -72,6 +81,8 @@ class CrudEngine:
 
             include_deleted=include_deleted,
 
+            user_context=self.user_context,
+
         )
 
 
@@ -97,6 +108,8 @@ class CrudEngine:
 
             record_id,
 
+            user_context=self.user_context,
+
         )
 
 
@@ -121,6 +134,8 @@ class CrudEngine:
             runtime,
 
             values,
+
+            user_context=self.user_context,
 
         )
 
@@ -150,6 +165,8 @@ class CrudEngine:
 
             values,
 
+            user_context=self.user_context,
+
         )
 
 
@@ -175,6 +192,8 @@ class CrudEngine:
 
             record_id,
 
+            user_context=self.user_context,
+
         )
 
 
@@ -199,5 +218,7 @@ class CrudEngine:
             runtime,
 
             record_id,
+
+            user_context=self.user_context,
 
         )

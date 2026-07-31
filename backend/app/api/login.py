@@ -34,8 +34,11 @@ token_service = TokenService()
 
 @router.post("/login")
 def login(
+
     user: dict,
+
     db: Session = Depends(get_db),
+
 ):
 
     username = user.get(
@@ -47,6 +50,7 @@ def login(
     )
 
 
+
     authenticated_user = auth_service.authenticate(
 
         db,
@@ -56,6 +60,7 @@ def login(
         password,
 
     )
+
 
 
     if not authenticated_user:
@@ -115,6 +120,14 @@ def login(
 
             "role":
                 role_name,
+
+
+            "company_id":
+                authenticated_user.company_id,
+
+
+            "plant_id":
+                authenticated_user.plant_id,
 
 
             "permissions":
@@ -171,6 +184,7 @@ def login(
 
 
 
+
 # =====================================================
 # JWT Protected Test API
 # =====================================================
@@ -192,6 +206,7 @@ def current_user(
             current_user,
 
     }
+
 
 
 
@@ -219,6 +234,7 @@ def token_login(
         form_data.password,
 
     )
+
 
 
     if not authenticated_user:
@@ -279,6 +295,14 @@ def token_login(
 
             "role":
                 role_name,
+
+
+            "company_id":
+                authenticated_user.company_id,
+
+
+            "plant_id":
+                authenticated_user.plant_id,
 
 
             "permissions":

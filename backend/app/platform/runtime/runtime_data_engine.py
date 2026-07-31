@@ -23,6 +23,14 @@ from app.platform.master_engine.history import (
 )
 
 
+class RuntimeAccessError(Exception):
+    """
+    Raised when runtime data access violates
+    company / plant ownership rules.
+    """
+    pass
+
+
 
 class RuntimeDataEngine:
     """
@@ -30,7 +38,14 @@ class RuntimeDataEngine:
 
     Handles dynamic ERP tables
     with automatic audit and history tracking.
+
+    BLUISH data security:
+    - GLOBAL
+    - COMPANY
+    - PLANT
     """
+
+
 
     def __init__(
         self,
@@ -43,7 +58,9 @@ class RuntimeDataEngine:
 
         self._tables: dict[str, Table] = {}
 
-        self.query_service = QueryService(db)
+        self.query_service = QueryService(
+            db
+        )
 
         self.audit = AuditEngine()
 
@@ -78,7 +95,133 @@ class RuntimeDataEngine:
 
 
 
-       # ---------------------------------------------------------
+    # ---------------------------------------------------------
+    # Data Scope Filter
+    # ---------------------------------------------------------
+
+    def apply_data_scope_filter(
+        self,
+        filters: dict[str, Any] | None,
+        user_context: dict | None,
+        data_scope: str = "GLOBAL",
+    ) -> dict[str, Any]:
+
+
+        runtime_filters = {}
+
+
+        if filters:
+
+            runtime_filters.update(
+                filters
+            )
+
+
+        if not user_context:
+
+            return runtime_filters
+
+
+
+        if data_scope == "COMPANY":
+
+            company_id = user_context.get(
+                "company_id"
+            )
+
+
+            if company_id is not None:
+
+                runtime_filters[
+                    "company_id"
+                ] = company_id
+
+
+
+        elif data_scope == "PLANT":
+
+            plant_id = user_context.get(
+                "plant_id"
+            )
+
+
+            if plant_id is not None:
+
+                runtime_filters[
+                    "plant_id"
+                ] = plant_id
+
+
+
+        return runtime_filters
+
+
+
+    # ---------------------------------------------------------
+    # Ownership Condition
+    # ---------------------------------------------------------
+
+    def apply_scope_condition(
+        self,
+        table,
+        stmt,
+        user_context: dict | None,
+        data_scope: str,
+    ):
+
+        if not user_context:
+
+            return stmt
+
+
+
+        if data_scope == "COMPANY":
+
+            company_id = user_context.get(
+                "company_id"
+            )
+
+
+            if (
+                company_id is not None
+                and hasattr(
+                    table.c,
+                    "company_id",
+                )
+            ):
+
+                stmt = stmt.where(
+                    table.c.company_id == company_id
+                )
+
+
+
+        elif data_scope == "PLANT":
+
+            plant_id = user_context.get(
+                "plant_id"
+            )
+
+
+            if (
+                plant_id is not None
+                and hasattr(
+                    table.c,
+                    "plant_id",
+                )
+            ):
+
+                stmt = stmt.where(
+                    table.c.plant_id == plant_id
+                )
+
+
+
+        return stmt
+
+
+
+    # ---------------------------------------------------------
     # List Records
     # ---------------------------------------------------------
 
@@ -93,10 +236,25 @@ class RuntimeDataEngine:
         order_by: str | None = None,
         descending: bool = False,
         include_deleted: bool = False,
+        user_context: dict | None = None,
+        data_scope: str = "GLOBAL",
     ) -> dict[str, Any]:
 
 
-        table = self.get_table(table_name)
+        table = self.get_table(
+            table_name
+        )
+
+
+        filters = self.apply_data_scope_filter(
+
+            filters,
+
+            user_context,
+
+            data_scope,
+
+        )
 
 
         return self.query_service.execute(
@@ -118,9 +276,7 @@ class RuntimeDataEngine:
             include_deleted=include_deleted,
 
         )
-    
-
-    # ---------------------------------------------------------
+            # ---------------------------------------------------------
     # Get Record
     # ---------------------------------------------------------
 
@@ -128,10 +284,14 @@ class RuntimeDataEngine:
         self,
         table_name: str,
         record_id: int,
+        user_context: dict | None = None,
+        data_scope: str = "GLOBAL",
     ) -> dict[str, Any] | None:
 
 
-        table = self.get_table(table_name)
+        table = self.get_table(
+            table_name
+        )
 
 
         stmt = select(table).where(
@@ -141,7 +301,22 @@ class RuntimeDataEngine:
         )
 
 
-        row = self.db.execute(stmt).first()
+        stmt = self.apply_scope_condition(
+
+            table,
+
+            stmt,
+
+            user_context,
+
+            data_scope,
+
+        )
+
+
+        row = self.db.execute(
+            stmt
+        ).first()
 
 
         if row is None:
@@ -150,6 +325,8 @@ class RuntimeDataEngine:
 
 
         return dict(row._mapping)
+
+
 
 
 
@@ -163,10 +340,14 @@ class RuntimeDataEngine:
         module_code: str,
         values: dict[str, Any],
         user: str = "system",
+        user_context: dict | None = None,
+        data_scope: str = "GLOBAL",
     ) -> int:
 
 
-        table = self.get_table(table_name)
+        table = self.get_table(
+            table_name
+        )
 
 
         values.setdefault(
@@ -179,6 +360,47 @@ class RuntimeDataEngine:
             "version",
             1,
         )
+
+
+        # Force ownership
+
+        if user_context:
+
+
+            if (
+                data_scope == "COMPANY"
+                and hasattr(
+                    table.c,
+                    "company_id",
+                )
+            ):
+
+                company_id = user_context.get(
+                    "company_id"
+                )
+
+                if company_id is not None:
+
+                    values["company_id"] = company_id
+
+
+
+            elif (
+                data_scope == "PLANT"
+                and hasattr(
+                    table.c,
+                    "plant_id",
+                )
+            ):
+
+                plant_id = user_context.get(
+                    "plant_id"
+                )
+
+                if plant_id is not None:
+
+                    values["plant_id"] = plant_id
+
 
 
         stmt = (
@@ -249,6 +471,8 @@ class RuntimeDataEngine:
 
 
 
+
+
     # ---------------------------------------------------------
     # Update
     # ---------------------------------------------------------
@@ -260,10 +484,14 @@ class RuntimeDataEngine:
         record_id: int,
         values: dict[str, Any],
         user: str = "system",
+        user_context: dict | None = None,
+        data_scope: str = "GLOBAL",
     ) -> None:
 
 
-        table = self.get_table(table_name)
+        table = self.get_table(
+            table_name
+        )
 
 
         old_data = self.get_record(
@@ -272,7 +500,18 @@ class RuntimeDataEngine:
 
             record_id,
 
+            user_context,
+
+            data_scope,
+
         )
+
+
+        if old_data is None:
+
+            raise RuntimeAccessError(
+                "Record not found or access denied"
+            )
 
 
         stmt = (
@@ -285,8 +524,24 @@ class RuntimeDataEngine:
 
             )
 
-            .values(**values)
+        )
 
+
+        stmt = self.apply_scope_condition(
+
+            table,
+
+            stmt,
+
+            user_context,
+
+            data_scope,
+
+        )
+
+
+        stmt = stmt.values(
+            **values
         )
 
 
@@ -341,6 +596,8 @@ class RuntimeDataEngine:
 
 
 
+
+
     # ---------------------------------------------------------
     # Soft Delete
     # ---------------------------------------------------------
@@ -351,111 +608,8 @@ class RuntimeDataEngine:
         module_code: str,
         record_id: int,
         user: str = "system",
-    ) -> None:
-
-
-        table = self.get_table(table_name)
-
-
-        old_data = self.get_record(
-
-            table_name,
-
-            record_id,
-
-        )
-
-
-        stmt = (
-
-            update(table)
-
-            .where(
-
-                table.c.id == record_id
-
-            )
-
-            .values(
-
-                is_active=False,
-
-                version=table.c.version + 1,
-
-            )
-
-        )
-
-
-        self.db.execute(stmt)
-
-        self.db.commit()
-
-
-
-        module_name = module_code.upper()
-
-
-
-        self.history.add(
-
-            db=self.db,
-
-            module=module_name,
-
-            record_id=record_id,
-
-            action="DELETE",
-
-            user=user,
-
-            changes={
-
-                "old": old_data,
-
-                "new": {
-
-                    "is_active": False
-
-                }
-
-            }
-
-        )
-
-
-
-        self.audit.create_log(
-
-            db=self.db,
-
-            action="DELETE",
-
-            module=module_name,
-
-            user=user,
-
-            record_id=record_id,
-
-            old_data=old_data,
-
-            new_data={
-
-                "is_active": False
-
-            },
-
-        )
-            # ---------------------------------------------------------
-    # Restore Soft Deleted Record
-    # ---------------------------------------------------------
-
-    def restore(
-        self,
-        table_name: str,
-        module_code: str,
-        record_id: int,
-        user: str = "system",
+        user_context: dict | None = None,
+        data_scope: str = "GLOBAL",
     ) -> None:
 
 
@@ -465,14 +619,22 @@ class RuntimeDataEngine:
 
 
         old_data = self.get_record(
+
             table_name,
+
             record_id,
+
+            user_context,
+
+            data_scope,
+
         )
 
 
         if old_data is None:
-            raise ValueError(
-                "Record not found"
+
+            raise RuntimeAccessError(
+                "Record not found or access denied"
             )
 
 
@@ -481,16 +643,32 @@ class RuntimeDataEngine:
             update(table)
 
             .where(
+
                 table.c.id == record_id
-            )
-
-            .values(
-
-                is_active=True,
-
-                version=table.c.version + 1,
 
             )
+
+        )
+
+
+        stmt = self.apply_scope_condition(
+
+            table,
+
+            stmt,
+
+            user_context,
+
+            data_scope,
+
+        )
+
+
+        stmt = stmt.values(
+
+            is_active=False,
+
+            version=table.c.version + 1,
 
         )
 
@@ -501,56 +679,83 @@ class RuntimeDataEngine:
 
 
 
-        module_name = module_code.upper()
 
 
+    # ---------------------------------------------------------
+    # Restore
+    # ---------------------------------------------------------
 
-        self.history.add(
+    def restore(
+        self,
+        table_name: str,
+        module_code: str,
+        record_id: int,
+        user: str = "system",
+        user_context: dict | None = None,
+        data_scope: str = "GLOBAL",
+    ) -> None:
 
-            db=self.db,
 
-            module=module_name,
+        table = self.get_table(
+            table_name
+        )
 
-            record_id=record_id,
 
-            action="RESTORE",
+        old_data = self.get_record(
 
-            user=user,
+            table_name,
 
-            changes={
+            record_id,
 
-                "old": old_data,
+            user_context,
 
-                "new": {
-
-                    "is_active": True
-
-                }
-
-            }
+            data_scope,
 
         )
 
 
+        if old_data is None:
 
-        self.audit.create_log(
+            raise RuntimeAccessError(
+                "Record not found or access denied"
+            )
 
-            db=self.db,
 
-            action="RESTORE",
+        stmt = (
 
-            module=module_name,
+            update(table)
 
-            user=user,
+            .where(
 
-            record_id=record_id,
+                table.c.id == record_id
 
-            old_data=old_data,
-
-            new_data={
-
-                "is_active": True
-
-            },
+            )
 
         )
+
+
+        stmt = self.apply_scope_condition(
+
+            table,
+
+            stmt,
+
+            user_context,
+
+            data_scope,
+
+        )
+
+
+        stmt = stmt.values(
+
+            is_active=True,
+
+            version=table.c.version + 1,
+
+        )
+
+
+        self.db.execute(stmt)
+
+        self.db.commit()
