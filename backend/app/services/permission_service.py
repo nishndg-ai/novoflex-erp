@@ -93,6 +93,8 @@ class PermissionService:
                 "can_delete":
                     permission.can_delete,
 
+                "can_restore":
+                    permission.can_restore,
 
                 "can_export":
                     permission.can_export,

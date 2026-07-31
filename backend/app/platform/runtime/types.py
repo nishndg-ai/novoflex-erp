@@ -256,6 +256,8 @@ class PermissionDefinition(BaseModel):
 
     can_delete: bool = False
 
+    can_restore: bool = False
+
     can_export: bool = False
 
     can_import: bool = False

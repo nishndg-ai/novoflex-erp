@@ -57,6 +57,10 @@ class MetadataPermission(BaseEntity):
         default=False,
     )
 
+    can_restore = Column(
+    Boolean,
+    default=False,
+    )
 
     can_export = Column(
         Boolean,
