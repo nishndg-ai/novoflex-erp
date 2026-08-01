@@ -3,25 +3,33 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
+
+from app.platform.excel.excel_reader import (
+    excel_reader,
+)
+
 
 
 class ImportEngine:
     """
     Master Data Import Engine.
 
-    Current support:
+    Responsibilities:
+
     - Excel preview
     - Excel import preparation
 
+    Excel reading is handled by:
+        ExcelReader
+
     Future:
-    - CSV
-    - PDF
-    - Word
-    - OCR
     - Mapping
     - Revision import
+    - Validation rules
+    - AI assisted mapping
     """
+
+
 
     # ---------------------------------------------------------
     # Preview File
@@ -32,32 +40,48 @@ class ImportEngine:
         file_path: str,
     ) -> dict[str, Any]:
 
-        file = Path(file_path)
+
+        file = Path(
+            file_path
+        )
+
 
         if not file.exists():
+
             raise FileNotFoundError(
                 f"File not found: {file_path}"
             )
 
-        df = self._read_file(
+
+        df = excel_reader.read(
             file_path
         )
 
+
         return {
-            "file_name": file.name,
+
+            "file_name":
+                file.name,
+
 
             "columns":
                 df.columns.tolist(),
 
+
             "rows":
-                df.fillna("")
-                .to_dict(
-                    orient="records"
+                (
+                    df.fillna("")
+                    .to_dict(
+                        orient="records"
+                    )
                 ),
+
 
             "total_rows":
                 len(df),
+
         }
+
 
 
     # ---------------------------------------------------------
@@ -69,51 +93,17 @@ class ImportEngine:
         file_path: str,
     ) -> list[dict[str, Any]]:
 
-        df = self._read_file(
+
+        df = excel_reader.read(
             file_path
         )
 
+
         return (
+
             df.fillna("")
             .to_dict(
                 orient="records"
             )
-        )
 
-
-    # ---------------------------------------------------------
-    # File Reader
-    # ---------------------------------------------------------
-
-    def _read_file(
-        self,
-        file_path: str,
-    ) -> pd.DataFrame:
-
-        extension = (
-            Path(file_path)
-            .suffix
-            .lower()
-        )
-
-
-        if extension in [
-            ".xlsx",
-            ".xls",
-        ]:
-
-            return pd.read_excel(
-                file_path
-            )
-
-
-        if extension == ".csv":
-
-            return pd.read_csv(
-                file_path
-            )
-
-
-        raise ValueError(
-            f"Unsupported file format: {extension}"
         )
