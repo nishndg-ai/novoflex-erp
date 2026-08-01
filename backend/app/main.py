@@ -21,6 +21,11 @@ from app.platform.master_engine.import_error import (
     ImportErrorDetail,
 )
 
+from app.platform.designer.models.designer_proposal import (
+    DesignerProposal,
+)
+
+
 
 # =====================================================
 # Platform Startup
@@ -29,6 +34,7 @@ from app.platform.master_engine.import_error import (
 from app.platform.crud.startup import initialize_crud
 from app.platform.events.startup import initialize_events
 from app.platform.workflow.startup import initialize_workflows
+
 
 
 # =====================================================
@@ -41,6 +47,7 @@ from app.api.imports import router as import_router
 from app.api.import_errors import router as import_errors_router
 from app.api.import_history import router as import_history_router
 
+
 from app.platform.routes import (
     lookup_router,
     metadata_router,
@@ -48,6 +55,11 @@ from app.platform.routes import (
     runtime_router,
     validation_router,
     designer_router,
+)
+
+
+from app.platform.designer.routes.proposal_route import (
+    router as proposal_router,
 )
 
 
@@ -62,6 +74,7 @@ from app.routes.plant import router as plant_router
 from app.routes.template import router as template_router
 from app.routes.uom import router as uom_router
 from app.routes.role import router as role_router
+
 
 
 
@@ -81,6 +94,7 @@ async def lifespan(app: FastAPI):
     )
 
     yield
+
 
 
 
@@ -106,6 +120,7 @@ app = FastAPI(
     lifespan=lifespan,
 
 )
+
 
 
 
@@ -138,6 +153,7 @@ app.add_middleware(
 
 
 
+
 # =====================================================
 # Initialize Platform
 # =====================================================
@@ -147,6 +163,7 @@ initialize_crud()
 initialize_events()
 
 initialize_workflows()
+
 
 
 
@@ -226,6 +243,7 @@ app.include_router(
     import_history_router
 )
 
+
 app.include_router(
     runtime_crud_router
 )
@@ -246,6 +264,15 @@ app.include_router(
 )
 
 
+# Designer Proposal Workflow
+
+app.include_router(
+    proposal_router
+)
+
+
+
+
 # Workflow / Notification
 
 app.include_router(
@@ -256,6 +283,7 @@ app.include_router(
 app.include_router(
     notification_router
 )
+
 
 
 
@@ -281,6 +309,7 @@ def root():
             "Running",
 
     }
+
 
 
 
