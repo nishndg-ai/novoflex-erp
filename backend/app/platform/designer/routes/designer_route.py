@@ -31,6 +31,11 @@ from app.platform.designer.services.object_analyzer_service import (
 )
 
 
+from app.platform.designer.services.designer_validation_service import (
+    DesignerValidationError,
+)
+
+
 
 router = APIRouter(
     prefix="/designer",
@@ -50,13 +55,27 @@ def create_business_object(
 ):
 
 
-    module = (
-        business_object_designer_service
-        .create_object(
-            db,
-            request,
+    try:
+
+        module = (
+            business_object_designer_service
+            .create_object(
+                db,
+                request,
+            )
         )
-    )
+
+
+    except DesignerValidationError as e:
+
+        raise HTTPException(
+
+            status_code=400,
+
+            detail=str(e),
+
+        )
+
 
 
     return {
@@ -96,10 +115,15 @@ async def analyze_excel(
         )
 
 
+
         if suffix not in [
+
             ".xlsx",
+
             ".xls",
+
         ]:
+
 
             raise HTTPException(
 
@@ -113,14 +137,20 @@ async def analyze_excel(
 
 
         with tempfile.NamedTemporaryFile(
+
             delete=False,
+
             suffix=suffix,
+
         ) as temp:
 
 
             shutil.copyfileobj(
+
                 file.file,
+
                 temp,
+
             )
 
 
@@ -129,10 +159,15 @@ async def analyze_excel(
 
 
         proposal = (
+
             object_analyzer_service
+
             .analyze_excel(
+
                 temp_path
+
             )
+
         )
 
 
@@ -148,6 +183,12 @@ async def analyze_excel(
                 proposal,
 
         }
+
+
+
+    except HTTPException:
+
+        raise
 
 
 

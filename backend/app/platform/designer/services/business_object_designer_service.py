@@ -25,6 +25,13 @@ from app.platform.designer.schemas.designer_schema import (
 )
 
 
+from app.platform.designer.services.designer_validation_service import (
+    designer_validation_service,
+)
+
+
+
+
 
 class BusinessObjectDesignerService:
     """
@@ -35,6 +42,9 @@ class BusinessObjectDesignerService:
     Flow:
 
         User Definition
+              |
+              ↓
+        Validation Engine
               |
               ↓
         Metadata Module
@@ -58,10 +68,30 @@ class BusinessObjectDesignerService:
     ):
 
 
+
+        # =====================================================
+        # DESIGNER VALIDATION
+        # =====================================================
+
+        designer_validation_service.validate_object(
+
+            db,
+
+            request.object_name,
+
+            request.fields,
+
+        )
+
+
+
         module_code = (
             request.object_name
             .lower()
-            .replace(" ", "_")
+            .replace(
+                " ",
+                "_",
+            )
         )
 
 
@@ -104,16 +134,17 @@ class BusinessObjectDesignerService:
 
         # =====================================================
         # CREATE MODULE WITHOUT AUTO PROVISION
-        #
-        # Designer controls the complete definition.
-        #
         # =====================================================
 
 
         created_module = metadata_service.create_module(
+
             db,
+
             module,
+
             provision=False,
+
         )
 
 
@@ -124,8 +155,11 @@ class BusinessObjectDesignerService:
 
 
         for index, field in enumerate(
+
             request.fields,
+
             start=1,
+
         ):
 
 
@@ -134,9 +168,16 @@ class BusinessObjectDesignerService:
                 module_id=created_module.id,
 
                 field_name=(
+
                     field.name
+
                     .lower()
-                    .replace(" ", "_")
+
+                    .replace(
+                        " ",
+                        "_",
+                    )
+
                 ),
 
                 display_name=field.label,
@@ -168,36 +209,29 @@ class BusinessObjectDesignerService:
 
 
 
-        # Save metadata fields
-
         db.flush()
 
 
 
         # =====================================================
         # DESIGNER PROVISIONING
-        #
-        # IMPORTANT:
-        #
-        # Does NOT create:
-        #   code
-        #   name
-        #   description
-        #
-        # Uses only user-defined fields.
-        #
         # =====================================================
 
 
         module_provisioning_service.provision_module(
+
             db,
+
             created_module,
+
             mode="DESIGNER",
+
         )
 
 
 
         return created_module
+
 
 
 
