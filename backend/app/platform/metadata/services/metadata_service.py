@@ -86,11 +86,40 @@ class MetadataService:
     # ------------------------------------------------------------------
     # CREATE MODULE + BLUISH AUTO PROVISIONING
     # ------------------------------------------------------------------
+    #
+    # Normal creation:
+    #
+    #     create_module()
+    #
+    # will automatically provision:
+    #
+    #     - Permissions
+    #     - Default Views
+    #     - Default Fields
+    #     - Database Table
+    #
+    #
+    # Designer creation:
+    #
+    #     create_module(
+    #         provision=False
+    #     )
+    #
+    # allows BLUISH Designer to first create:
+    #
+    #     - User defined fields
+    #     - Layouts
+    #     - Views
+    #
+    # and then provision once.
+    #
+    # ------------------------------------------------------------------
 
     def create_module(
         self,
         db: Session,
         module: MetadataModule,
+        provision: bool = True,
     ):
 
 
@@ -135,10 +164,12 @@ class MetadataService:
         # ==========================================================
 
 
-        module_provisioning_service.provision_module(
-    db,
-    created_module,
-)
+        if provision:
+
+            module_provisioning_service.provision_module(
+                db,
+                created_module,
+            )
 
 
 

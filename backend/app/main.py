@@ -47,6 +47,7 @@ from app.platform.routes import (
     runtime_crud_router,
     runtime_router,
     validation_router,
+    designer_router,
 )
 
 
@@ -239,6 +240,10 @@ app.include_router(
     validation_router
 )
 
+
+app.include_router(
+    designer_router
+)
 
 
 # Workflow / Notification

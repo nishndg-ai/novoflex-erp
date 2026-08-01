@@ -26,21 +26,31 @@ class ModuleProvisioningService:
     """
     BLUISH Module Provisioning Engine
 
-    Automatically creates common platform
-    capabilities whenever a new module is created.
+    Creates platform capabilities for dynamic objects.
 
-    Features:
-        - Permissions
-        - Default Views
-        - Default Fields
-        - Dynamic Database Table
+    Modes:
 
-    Future:
-        - Menu
-        - Workflow
-        - Reports
-        - Notifications
-        - AI Configuration
+    STANDARD:
+        Used for normal masters.
+        Creates:
+            - Permissions
+            - Views
+            - Default fields
+            - Database table
+
+
+    DESIGNER:
+        Used by Business Object Designer.
+        Creates:
+            - Permissions
+            - Views
+            - User defined fields
+            - Database table
+
+        Does NOT create:
+            - code
+            - name
+            - description
     """
 
 
@@ -98,7 +108,6 @@ class ModuleProvisioningService:
             "data_type": "string",
             "control_type": "TEXTBOX",
             "length": 150,
-            "is_primary": False,
             "is_required": True,
             "is_unique": False,
             "display_order": 2,
@@ -115,7 +124,6 @@ class ModuleProvisioningService:
             "data_type": "string",
             "control_type": "TEXTAREA",
             "length": 500,
-            "is_primary": False,
             "is_required": False,
             "is_unique": False,
             "display_order": 3,
@@ -131,7 +139,7 @@ class ModuleProvisioningService:
 
 
     # =====================================================
-    # SECURITY PROVISIONING
+    # PERMISSIONS
     # =====================================================
 
     def provision_permissions(
@@ -142,17 +150,17 @@ class ModuleProvisioningService:
 
         for role in self.DEFAULT_ROLES:
 
-            permission = MetadataPermission(
-                module_id=module_id,
-                **role,
+            db.add(
+                MetadataPermission(
+                    module_id=module_id,
+                    **role,
+                )
             )
-
-            db.add(permission)
 
 
 
     # =====================================================
-    # VIEW PROVISIONING
+    # VIEWS
     # =====================================================
 
     def provision_views(
@@ -175,7 +183,6 @@ class ModuleProvisioningService:
                 is_default=True,
             ),
 
-
             MetadataView(
                 module_id=module_id,
                 view_code=f"{module_code}_form",
@@ -184,7 +191,6 @@ class ModuleProvisioningService:
                 view_type=ViewType.FORM,
                 page_size=1,
             ),
-
 
             MetadataView(
                 module_id=module_id,
@@ -199,16 +205,15 @@ class ModuleProvisioningService:
 
 
         for view in views:
-
             db.add(view)
 
 
 
     # =====================================================
-    # FIELD PROVISIONING
+    # DEFAULT FIELD PROVISIONING
     # =====================================================
 
-    def provision_fields(
+    def provision_default_fields(
         self,
         db: Session,
         module_id: int,
@@ -216,17 +221,17 @@ class ModuleProvisioningService:
 
         for field in self.DEFAULT_FIELDS:
 
-            metadata_field = MetadataField(
-                module_id=module_id,
-                **field,
+            db.add(
+                MetadataField(
+                    module_id=module_id,
+                    **field,
+                )
             )
-
-            db.add(metadata_field)
 
 
 
     # =====================================================
-    # DATABASE TABLE PROVISIONING
+    # SCHEMA
     # =====================================================
 
     def provision_schema(
@@ -235,9 +240,7 @@ class ModuleProvisioningService:
         module_id: int,
     ):
 
-        generator = SchemaGenerator(
-            db
-        )
+        generator = SchemaGenerator(db)
 
         return generator.generate_table(
             module_id
@@ -246,24 +249,22 @@ class ModuleProvisioningService:
 
 
     # =====================================================
-    # COMPLETE MODULE PROVISIONING
+    # MAIN PROVISION METHOD
     # =====================================================
 
     def provision_module(
         self,
         db: Session,
         module,
+        mode: str = "STANDARD",
     ):
 
-        # Security
 
         self.provision_permissions(
             db,
             module.id,
         )
 
-
-        # UI Views
 
         self.provision_views(
             db,
@@ -273,19 +274,30 @@ class ModuleProvisioningService:
         )
 
 
-        # Metadata Fields
+        if mode == "STANDARD":
 
-        self.provision_fields(
-            db,
-            module.id,
-        )
+            self.provision_default_fields(
+                db,
+                module.id,
+            )
 
 
-        # Save metadata first
+        elif mode == "DESIGNER":
+
+            pass
+
+
+        else:
+
+            raise ValueError(
+                f"Invalid provisioning mode: {mode}"
+            )
+
+
+
         db.flush()
 
 
-        # Physical Database Table
 
         self.provision_schema(
             db,
