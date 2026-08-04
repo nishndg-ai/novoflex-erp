@@ -10,27 +10,19 @@ db = SessionLocal()
 
 
 
-module_id = 12
-
-
-
-# =====================================================
-# CREATE TEST RECORD
-# =====================================================
-
 data = {
 
     "location_code":
-        "LOC001",
+        "LOC002",
 
     "location_name":
-        "Main Plant",
+        "Second Plant",
 
     "warehouse_code":
         "WH01",
 
     "storage_location":
-        "Rack-A",
+        "Rack-B",
 
     "is_active":
         True,
@@ -43,9 +35,11 @@ result = runtime_crud_service.create(
 
     db,
 
-    module_id,
+    12,
 
     data,
+
+    user="system",
 
 )
 
@@ -61,15 +55,11 @@ print(result)
 
 
 
-# =====================================================
-# READ LIST
-# =====================================================
-
 records = runtime_crud_service.list(
 
     db,
 
-    module_id,
+    12,
 
 )
 

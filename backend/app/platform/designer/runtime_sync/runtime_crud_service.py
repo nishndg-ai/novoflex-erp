@@ -8,9 +8,12 @@ from app.platform.metadata.models.metadata_module import (
     MetadataModule,
 )
 
-
 from app.platform.metadata.models.metadata_field import (
     MetadataField,
+)
+
+from app.platform.master_engine.audit import (
+    AuditEngine,
 )
 
 
@@ -19,7 +22,7 @@ class RuntimeCrudService:
     """
     BLUISH Dynamic Runtime CRUD Engine
 
-    Metadata driven database operations.
+    Metadata driven CRUD.
 
     Supported:
 
@@ -33,8 +36,14 @@ class RuntimeCrudService:
 
 
 
+    def __init__(self):
+
+        self.audit = AuditEngine()
+
+
+
     # =====================================================
-    # CREATE RECORD
+    # CREATE
     # =====================================================
 
     def create(
@@ -46,6 +55,8 @@ class RuntimeCrudService:
         module_id: int,
 
         data: dict,
+
+        user: str = "system",
 
     ):
 
@@ -154,6 +165,28 @@ class RuntimeCrudService:
 
 
 
+        module_name = module.table_name.upper()
+
+
+
+        self.audit.create_log(
+
+            db=db,
+
+            action="CREATE",
+
+            module=module_name,
+
+            user=user,
+
+            record_id=record_id,
+
+            new_data=insert_data,
+
+        )
+
+
+
         return {
 
             "id":
@@ -213,7 +246,6 @@ class RuntimeCrudService:
         )
 
 
-
         return [
 
             dict(row._mapping)
@@ -270,9 +302,7 @@ class RuntimeCrudService:
 
             {
 
-                "id":
-
-                    record_id
+                "id": record_id
 
             },
 
@@ -289,18 +319,14 @@ class RuntimeCrudService:
 
 
 
-        return dict(
-
-            row._mapping
-
-        )
+        return dict(row._mapping)
 
 
 
 
 
     # =====================================================
-    # UPDATE RECORD
+    # UPDATE
     # =====================================================
 
     def update(
@@ -315,6 +341,8 @@ class RuntimeCrudService:
 
         data: dict,
 
+        user: str = "system",
+
     ):
 
 
@@ -325,6 +353,29 @@ class RuntimeCrudService:
             module_id,
 
         )
+
+
+        old_data = self.get(
+
+            db,
+
+            module_id,
+
+            record_id,
+
+        )
+
+
+        if old_data is None:
+
+            return {
+
+                "status":
+
+                    "NOT_FOUND"
+
+            }
+
 
 
         fields = self.get_fields(
@@ -355,16 +406,6 @@ class RuntimeCrudService:
             if key in allowed_fields
 
         }
-
-
-
-        if not update_data:
-
-            raise Exception(
-
-                "No valid fields provided."
-
-            )
 
 
 
@@ -423,6 +464,26 @@ class RuntimeCrudService:
 
 
 
+        self.audit.create_log(
+
+            db=db,
+
+            action="UPDATE",
+
+            module=module.table_name.upper(),
+
+            user=user,
+
+            record_id=record_id,
+
+            old_data=old_data,
+
+            new_data=data,
+
+        )
+
+
+
         return {
 
             "id":
@@ -440,7 +501,7 @@ class RuntimeCrudService:
 
 
     # =====================================================
-    # SOFT DELETE RECORD
+    # SOFT DELETE
     # =====================================================
 
     def soft_delete(
@@ -452,6 +513,8 @@ class RuntimeCrudService:
         module_id: int,
 
         record_id: int,
+
+        user: str = "system",
 
     ):
 
@@ -465,33 +528,26 @@ class RuntimeCrudService:
         )
 
 
-        fields = self.get_fields(
+        old_data = self.get(
 
             db,
 
             module_id,
 
+            record_id,
+
         )
 
 
-        field_names = [
+        if old_data is None:
 
-            field.field_name
+            return {
 
-            for field in fields
+                "status":
 
-        ]
+                    "NOT_FOUND"
 
-
-
-        if "is_active" not in field_names:
-
-
-            raise Exception(
-
-                "Soft delete requires is_active field."
-
-            )
+            }
 
 
 
@@ -499,7 +555,7 @@ class RuntimeCrudService:
 
         UPDATE {module.table_name}
 
-        SET is_active = false
+        SET is_active=false
 
         WHERE id=:id
 
@@ -513,9 +569,7 @@ class RuntimeCrudService:
 
             {
 
-                "id":
-
-                    record_id
+                "id": record_id
 
             },
 
@@ -535,6 +589,30 @@ class RuntimeCrudService:
                     "NOT_FOUND"
 
             }
+
+
+
+        self.audit.create_log(
+
+            db=db,
+
+            action="DELETE",
+
+            module=module.table_name.upper(),
+
+            user=user,
+
+            record_id=record_id,
+
+            old_data=old_data,
+
+            new_data={
+
+                "is_active": False
+
+            },
+
+        )
 
 
 
@@ -588,7 +666,6 @@ class RuntimeCrudService:
         )
 
 
-
         if not module:
 
             raise Exception(
@@ -596,7 +673,6 @@ class RuntimeCrudService:
                 "Module not found."
 
             )
-
 
 
         return module
