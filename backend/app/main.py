@@ -25,7 +25,9 @@ from app.platform.designer.models.designer_proposal import (
     DesignerProposal,
 )
 
-
+from app.platform.designer.versioning.designer_object_version import (
+    DesignerObjectVersion,
+)
 
 # =====================================================
 # Platform Startup
@@ -61,7 +63,9 @@ from app.platform.routes import (
 from app.platform.designer.routes.proposal_route import (
     router as proposal_router,
 )
-
+from app.platform.designer.versioning.version_route import (
+    router as version_router,
+)
 
 from app.platform.workflow.router import router as workflow_router
 from app.platform.notifications.router import router as notification_router
@@ -270,6 +274,13 @@ app.include_router(
     proposal_router
 )
 
+
+
+# Designer Version Management
+
+app.include_router(
+    version_router
+)
 
 
 

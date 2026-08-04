@@ -30,6 +30,11 @@ from app.platform.designer.services.designer_validation_service import (
 )
 
 
+from app.platform.designer.versioning.designer_version_service import (
+    designer_version_service,
+)
+
+
 
 
 
@@ -54,6 +59,9 @@ class BusinessObjectDesignerService:
               |
               ↓
         Designer Provisioning
+              |
+              ↓
+        Version History
               |
               ↓
         Runtime ERP Object
@@ -86,49 +94,73 @@ class BusinessObjectDesignerService:
 
 
         module_code = (
+
             request.object_name
+
             .lower()
+
             .replace(
+
                 " ",
+
                 "_",
+
             )
+
         )
 
 
 
         module = MetadataModule(
 
+
             module_code=module_code,
+
 
             module_name=request.object_name,
 
+
             display_name=request.object_name,
+
 
             description=request.description,
 
+
             application=request.application,
+
 
             category=request.category,
 
+
             route=f"/{module_code}",
+
 
             table_name=module_code,
 
+
             api_endpoint=f"/runtime-data/{module_code}",
+
 
             page_size=20,
 
+
             supports_excel=request.features.excel_import,
+
 
             supports_workflow=request.features.workflow,
 
+
             supports_dashboard=request.features.dashboard,
+
 
             supports_ai=request.features.ai,
 
+
             is_system=False,
 
+
         )
+
 
 
 
@@ -149,6 +181,8 @@ class BusinessObjectDesignerService:
 
 
 
+
+
         # =====================================================
         # CREATE USER DEFINED FIELDS
         # =====================================================
@@ -163,9 +197,12 @@ class BusinessObjectDesignerService:
         ):
 
 
+
             metadata_field = MetadataField(
 
+
                 module_id=created_module.id,
+
 
                 field_name=(
 
@@ -174,42 +211,63 @@ class BusinessObjectDesignerService:
                     .lower()
 
                     .replace(
+
                         " ",
+
                         "_",
+
                     )
 
                 ),
 
+
                 display_name=field.label,
+
 
                 data_type=field.data_type,
 
+
                 control_type=field.control_type,
+
 
                 length=field.length,
 
+
                 is_required=field.required,
+
 
                 is_unique=field.unique,
 
+
                 show_in_grid=field.show_in_grid,
+
 
                 is_searchable=field.searchable,
 
+
                 is_filterable=field.filterable,
+
 
                 display_order=index,
 
+
             )
+
 
 
             db.add(
+
                 metadata_field
+
             )
+
+
 
 
 
         db.flush()
+
+
 
 
 
@@ -227,6 +285,29 @@ class BusinessObjectDesignerService:
             mode="DESIGNER",
 
         )
+
+
+
+
+
+        # =====================================================
+        # CREATE INITIAL VERSION HISTORY
+        # =====================================================
+
+
+        designer_version_service.create_initial_version(
+
+            db,
+
+            created_module.id,
+
+            request.model_dump(),
+
+            created_by="SYSTEM",
+
+        )
+
+
 
 
 
