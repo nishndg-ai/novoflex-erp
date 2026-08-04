@@ -13,16 +13,16 @@ db = SessionLocal()
 data = {
 
     "location_code":
-        "LOC002",
+        "LOC003",
 
     "location_name":
-        "Second Plant",
+        "Third Plant",
 
     "warehouse_code":
         "WH01",
 
     "storage_location":
-        "Rack-B",
+        "Rack-C",
 
     "is_active":
         True,
@@ -39,7 +39,7 @@ result = runtime_crud_service.create(
 
     data,
 
-    user="system",
+    user="nishant",
 
 )
 

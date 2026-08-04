@@ -16,29 +16,20 @@ from app.platform.master_engine.audit import (
     AuditEngine,
 )
 
+from app.platform.master_engine.history import (
+    HistoryEngine,
+)
+
 
 
 class RuntimeCrudService:
-    """
-    BLUISH Dynamic Runtime CRUD Engine
-
-    Metadata driven CRUD.
-
-    Supported:
-
-        CREATE
-        READ LIST
-        READ SINGLE
-        UPDATE
-        SOFT DELETE
-
-    """
-
 
 
     def __init__(self):
 
         self.audit = AuditEngine()
+
+        self.history = HistoryEngine()
 
 
 
@@ -62,20 +53,14 @@ class RuntimeCrudService:
 
 
         module = self.get_module(
-
             db,
-
             module_id,
-
         )
 
 
         fields = self.get_fields(
-
             db,
-
             module_id,
-
         )
 
 
@@ -86,7 +71,6 @@ class RuntimeCrudService:
             for field in fields
 
         ]
-
 
 
         insert_data = {
@@ -101,20 +85,8 @@ class RuntimeCrudService:
 
 
 
-        if not insert_data:
-
-            raise Exception(
-
-                "No valid fields provided."
-
-            )
-
-
-
         columns = ", ".join(
-
             insert_data.keys()
-
         )
 
 
@@ -164,10 +136,13 @@ class RuntimeCrudService:
         record_id = result.fetchone()[0]
 
 
-
         module_name = module.table_name.upper()
 
 
+
+        # -----------------------------
+        # AUDIT
+        # -----------------------------
 
         self.audit.create_log(
 
@@ -187,15 +162,37 @@ class RuntimeCrudService:
 
 
 
+        # -----------------------------
+        # HISTORY
+        # -----------------------------
+
+        self.history.add(
+
+            db=db,
+
+            module=module_name,
+
+            record_id=record_id,
+
+            action="CREATE",
+
+            user=user,
+
+            changes={
+
+                "new": insert_data
+
+            },
+
+        )
+
+
+
         return {
 
-            "id":
+            "id": record_id,
 
-                record_id,
-
-            "status":
-
-                "CREATED",
+            "status": "CREATED",
 
         }
 
@@ -219,29 +216,26 @@ class RuntimeCrudService:
 
 
         module = self.get_module(
-
             db,
-
             module_id,
-
         )
-
-
-        sql = f"""
-
-        SELECT *
-
-        FROM {module.table_name}
-
-        ORDER BY id
-
-        """
-
 
 
         result = db.execute(
 
-            text(sql)
+            text(
+
+                f"""
+
+                SELECT *
+
+                FROM {module.table_name}
+
+                ORDER BY id
+
+                """
+
+            )
 
         )
 
@@ -276,35 +270,32 @@ class RuntimeCrudService:
 
 
         module = self.get_module(
-
             db,
-
             module_id,
-
         )
-
-
-        sql = f"""
-
-        SELECT *
-
-        FROM {module.table_name}
-
-        WHERE id=:id
-
-        """
-
 
 
         result = db.execute(
 
-            text(sql),
+            text(
+
+                f"""
+
+                SELECT *
+
+                FROM {module.table_name}
+
+                WHERE id=:id
+
+                """
+
+            ),
 
             {
 
                 "id": record_id
 
-            },
+            }
 
         )
 
@@ -313,7 +304,7 @@ class RuntimeCrudService:
 
 
 
-        if not row:
+        if row is None:
 
             return None
 
@@ -366,46 +357,14 @@ class RuntimeCrudService:
         )
 
 
+
         if old_data is None:
 
             return {
 
-                "status":
-
-                    "NOT_FOUND"
+                "status":"NOT_FOUND"
 
             }
-
-
-
-        fields = self.get_fields(
-
-            db,
-
-            module_id,
-
-        )
-
-
-        allowed_fields = [
-
-            field.field_name
-
-            for field in fields
-
-        ]
-
-
-
-        update_data = {
-
-            key: value
-
-            for key, value in data.items()
-
-            if key in allowed_fields
-
-        }
 
 
 
@@ -415,52 +374,39 @@ class RuntimeCrudService:
 
                 f"{key}=:{key}"
 
-                for key in update_data.keys()
+                for key in data.keys()
 
             ]
 
         )
 
 
-
-        update_data["id"] = record_id
-
-
-
-        sql = f"""
-
-        UPDATE {module.table_name}
-
-        SET {set_clause}
-
-        WHERE id=:id
-
-        """
+        data["id"] = record_id
 
 
 
         result = db.execute(
 
-            text(sql),
+            text(
 
-            update_data,
+                f"""
+
+                UPDATE {module.table_name}
+
+                SET {set_clause}
+
+                WHERE id=:id
+
+                """
+
+            ),
+
+            data,
 
         )
 
 
         db.commit()
-
-
-
-        if result.rowcount == 0:
-
-            return {
-
-                "status":
-
-                    "NOT_FOUND"
-
-            }
 
 
 
@@ -486,13 +432,9 @@ class RuntimeCrudService:
 
         return {
 
-            "id":
+            "id": record_id,
 
-                record_id,
-
-            "status":
-
-                "UPDATED",
+            "status":"UPDATED",
 
         }
 
@@ -539,56 +481,33 @@ class RuntimeCrudService:
         )
 
 
-        if old_data is None:
-
-            return {
-
-                "status":
-
-                    "NOT_FOUND"
-
-            }
-
-
-
-        sql = f"""
-
-        UPDATE {module.table_name}
-
-        SET is_active=false
-
-        WHERE id=:id
-
-        """
-
-
 
         result = db.execute(
 
-            text(sql),
+            text(
+
+                f"""
+
+                UPDATE {module.table_name}
+
+                SET is_active=false
+
+                WHERE id=:id
+
+                """
+
+            ),
 
             {
 
-                "id": record_id
+                "id":record_id
 
-            },
+            }
 
         )
 
 
         db.commit()
-
-
-
-        if result.rowcount == 0:
-
-            return {
-
-                "status":
-
-                    "NOT_FOUND"
-
-            }
 
 
 
@@ -608,7 +527,7 @@ class RuntimeCrudService:
 
             new_data={
 
-                "is_active": False
+                "is_active":False
 
             },
 
@@ -618,13 +537,9 @@ class RuntimeCrudService:
 
         return {
 
-            "id":
+            "id":record_id,
 
-                record_id,
-
-            "status":
-
-                "DEACTIVATED",
+            "status":"DEACTIVATED"
 
         }
 
@@ -642,7 +557,7 @@ class RuntimeCrudService:
 
         db: Session,
 
-        module_id: int,
+        module_id:int,
 
     ):
 
@@ -670,7 +585,7 @@ class RuntimeCrudService:
 
             raise Exception(
 
-                "Module not found."
+                "Module not found"
 
             )
 
@@ -687,7 +602,7 @@ class RuntimeCrudService:
 
         db: Session,
 
-        module_id: int,
+        module_id:int,
 
     ):
 
