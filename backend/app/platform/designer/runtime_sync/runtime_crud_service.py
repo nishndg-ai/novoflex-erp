@@ -481,7 +481,7 @@ class RuntimeCrudService:
 
 
 
-    # =====================================================
+        # =====================================================
     # SOFT DELETE
     # =====================================================
 
@@ -530,6 +530,8 @@ class RuntimeCrudService:
 
 
 
+        # Preserve original snapshot
+
         old_data = old_data.copy()
 
 
@@ -567,6 +569,10 @@ class RuntimeCrudService:
 
 
 
+        # -----------------------------
+        # AUDIT
+        # -----------------------------
+
         self.audit.create_log(
 
             db=db,
@@ -591,6 +597,10 @@ class RuntimeCrudService:
 
 
 
+        # -----------------------------
+        # HISTORY
+        # -----------------------------
+
         self.history.add(
 
             db=db,
@@ -611,7 +621,7 @@ class RuntimeCrudService:
 
                     "is_active": False
 
-                }
+                },
 
             },
 
@@ -626,8 +636,6 @@ class RuntimeCrudService:
             "status": "DEACTIVATED"
 
         }
-
-
 
 
 
