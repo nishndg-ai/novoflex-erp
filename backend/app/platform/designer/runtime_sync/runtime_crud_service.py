@@ -636,7 +636,159 @@ class RuntimeCrudService:
             "status": "DEACTIVATED"
 
         }
+    # =====================================================
+    # RESTORE / REACTIVATE
+    # =====================================================
 
+    def restore(
+
+        self,
+
+        db: Session,
+
+        module_id: int,
+
+        record_id: int,
+
+        user: str = "system",
+
+    ):
+
+
+        module = self.get_module(
+
+            db,
+
+            module_id,
+
+        )
+
+
+        old_data = self.get(
+
+            db,
+
+            module_id,
+
+            record_id,
+
+        )
+
+
+        if old_data is None:
+
+            return {
+
+                "status": "NOT_FOUND"
+
+            }
+
+
+
+        old_data = old_data.copy()
+
+
+
+        db.execute(
+
+            text(
+
+                f"""
+
+                UPDATE {module.table_name}
+
+                SET is_active=true
+
+                WHERE id=:id
+
+                """
+
+            ),
+
+            {
+
+                "id": record_id
+
+            }
+
+        )
+
+
+        db.commit()
+
+
+
+        module_name = module.table_name.upper()
+
+
+
+        # -----------------------------
+        # AUDIT
+        # -----------------------------
+
+        self.audit.create_log(
+
+            db=db,
+
+            action="RESTORE",
+
+            module=module_name,
+
+            user=user,
+
+            record_id=record_id,
+
+            old_data=old_data,
+
+            new_data={
+
+                "is_active": True
+
+            },
+
+        )
+
+
+
+        # -----------------------------
+        # HISTORY
+        # -----------------------------
+
+        self.history.add(
+
+            db=db,
+
+            module=module_name,
+
+            record_id=record_id,
+
+            action="RESTORE",
+
+            user=user,
+
+            changes={
+
+                "old": old_data,
+
+                "new": {
+
+                    "is_active": True
+
+                },
+
+            },
+
+        )
+
+
+
+        return {
+
+            "id": record_id,
+
+            "status": "RESTORED"
+
+        }
 
 
     # =====================================================
