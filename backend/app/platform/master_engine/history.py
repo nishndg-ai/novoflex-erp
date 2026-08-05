@@ -25,21 +25,26 @@ class HistoryEngine:
 
 
     def serialize(
+
         self,
+
         value: Any,
+
     ) -> Any:
 
 
+
         if isinstance(
+
             value,
+
             dict,
+
         ):
 
             return {
 
-                key: self.serialize(
-                    item
-                )
+                key: self.serialize(item)
 
                 for key, item in value.items()
 
@@ -48,15 +53,16 @@ class HistoryEngine:
 
 
         if isinstance(
+
             value,
+
             list,
+
         ):
 
             return [
 
-                self.serialize(
-                    item
-                )
+                self.serialize(item)
 
                 for item in value
 
@@ -65,11 +71,17 @@ class HistoryEngine:
 
 
         if isinstance(
+
             value,
+
             (
+
                 datetime,
+
                 date,
+
             ),
+
         ):
 
             return value.isoformat()
@@ -77,8 +89,11 @@ class HistoryEngine:
 
 
         if isinstance(
+
             value,
+
             Decimal,
+
         ):
 
             return float(value)
@@ -92,29 +107,46 @@ class HistoryEngine:
 
 
     def add(
+
         self,
+
         db: Session,
+
         module: str,
+
         record_id: int,
+
         action: str,
+
         user: str,
+
         changes: dict,
+
     ):
 
 
+
         serialized_changes = self.serialize(
+
             changes
+
         )
 
 
+
         old_data = serialized_changes.get(
+
             "old"
+
         )
 
 
         new_data = serialized_changes.get(
+
             "new"
+
         )
+
 
 
         history = MasterHistory(
@@ -131,7 +163,10 @@ class HistoryEngine:
 
             changed_by=user,
 
+            changed_at=datetime.now(),
+
         )
+
 
 
         db.add(history)
@@ -139,6 +174,7 @@ class HistoryEngine:
         db.commit()
 
         db.refresh(history)
+
 
 
         return history

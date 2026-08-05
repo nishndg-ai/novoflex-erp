@@ -3,7 +3,6 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-
 from app.platform.metadata.models.metadata_module import (
     MetadataModule,
 )
@@ -104,25 +103,25 @@ class RuntimeCrudService:
 
 
 
-        sql = f"""
-
-        INSERT INTO {module.table_name}
-
-        ({columns})
-
-        VALUES
-
-        ({params})
-
-        RETURNING id
-
-        """
-
-
-
         result = db.execute(
 
-            text(sql),
+            text(
+
+                f"""
+
+                INSERT INTO {module.table_name}
+
+                ({columns})
+
+                VALUES
+
+                ({params})
+
+                RETURNING id
+
+                """
+
+            ),
 
             insert_data,
 
@@ -139,10 +138,6 @@ class RuntimeCrudService:
         module_name = module.table_name.upper()
 
 
-
-        # -----------------------------
-        # AUDIT
-        # -----------------------------
 
         self.audit.create_log(
 
@@ -161,10 +156,6 @@ class RuntimeCrudService:
         )
 
 
-
-        # -----------------------------
-        # HISTORY
-        # -----------------------------
 
         self.history.add(
 
@@ -216,8 +207,11 @@ class RuntimeCrudService:
 
 
         module = self.get_module(
+
             db,
+
             module_id,
+
         )
 
 
@@ -270,8 +264,11 @@ class RuntimeCrudService:
 
 
         module = self.get_module(
+
             db,
+
             module_id,
+
         )
 
 
@@ -311,12 +308,7 @@ class RuntimeCrudService:
 
 
         return dict(row._mapping)
-
-
-
-
-
-    # =====================================================
+        # =====================================================
     # UPDATE
     # =====================================================
 
@@ -357,14 +349,28 @@ class RuntimeCrudService:
         )
 
 
-
         if old_data is None:
 
             return {
 
-                "status":"NOT_FOUND"
+                "status": "NOT_FOUND"
 
             }
+
+
+
+        # Preserve original database state
+
+        old_data = old_data.copy()
+
+
+
+        # Separate update payload
+
+        update_data = data.copy()
+
+
+        update_data["id"] = record_id
 
 
 
@@ -381,11 +387,8 @@ class RuntimeCrudService:
         )
 
 
-        data["id"] = record_id
 
-
-
-        result = db.execute(
+        db.execute(
 
             text(
 
@@ -401,7 +404,7 @@ class RuntimeCrudService:
 
             ),
 
-            data,
+            update_data,
 
         )
 
@@ -410,13 +413,21 @@ class RuntimeCrudService:
 
 
 
+        module_name = module.table_name.upper()
+
+
+
+        # -----------------------------
+        # AUDIT
+        # -----------------------------
+
         self.audit.create_log(
 
             db=db,
 
             action="UPDATE",
 
-            module=module.table_name.upper(),
+            module=module_name,
 
             user=user,
 
@@ -430,11 +441,39 @@ class RuntimeCrudService:
 
 
 
+        # -----------------------------
+        # HISTORY
+        # -----------------------------
+
+        self.history.add(
+
+            db=db,
+
+            module=module_name,
+
+            record_id=record_id,
+
+            action="UPDATE",
+
+            user=user,
+
+            changes={
+
+                "old": old_data,
+
+                "new": data,
+
+            },
+
+        )
+
+
+
         return {
 
             "id": record_id,
 
-            "status":"UPDATED",
+            "status": "UPDATED",
 
         }
 
@@ -481,8 +520,21 @@ class RuntimeCrudService:
         )
 
 
+        if old_data is None:
 
-        result = db.execute(
+            return {
+
+                "status": "NOT_FOUND"
+
+            }
+
+
+
+        old_data = old_data.copy()
+
+
+
+        db.execute(
 
             text(
 
@@ -500,7 +552,7 @@ class RuntimeCrudService:
 
             {
 
-                "id":record_id
+                "id": record_id
 
             }
 
@@ -511,13 +563,17 @@ class RuntimeCrudService:
 
 
 
+        module_name = module.table_name.upper()
+
+
+
         self.audit.create_log(
 
             db=db,
 
             action="DELETE",
 
-            module=module.table_name.upper(),
+            module=module_name,
 
             user=user,
 
@@ -527,7 +583,35 @@ class RuntimeCrudService:
 
             new_data={
 
-                "is_active":False
+                "is_active": False
+
+            },
+
+        )
+
+
+
+        self.history.add(
+
+            db=db,
+
+            module=module_name,
+
+            record_id=record_id,
+
+            action="DELETE",
+
+            user=user,
+
+            changes={
+
+                "old": old_data,
+
+                "new": {
+
+                    "is_active": False
+
+                }
 
             },
 
@@ -537,9 +621,9 @@ class RuntimeCrudService:
 
         return {
 
-            "id":record_id,
+            "id": record_id,
 
-            "status":"DEACTIVATED"
+            "status": "DEACTIVATED"
 
         }
 
@@ -557,7 +641,7 @@ class RuntimeCrudService:
 
         db: Session,
 
-        module_id:int,
+        module_id: int,
 
     ):
 
@@ -602,7 +686,7 @@ class RuntimeCrudService:
 
         db: Session,
 
-        module_id:int,
+        module_id: int,
 
     ):
 

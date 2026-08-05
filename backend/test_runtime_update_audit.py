@@ -5,9 +5,7 @@ from app.platform.designer.runtime_sync.runtime_crud_service import (
 from app.database.session import SessionLocal
 
 
-
 db = SessionLocal()
-
 
 
 result = runtime_crud_service.update(
@@ -16,20 +14,15 @@ result = runtime_crud_service.update(
 
     12,
 
-    6,
+    8,
 
     {
-
-        "warehouse_code":
-
-            "WH02"
-
+        "warehouse_code": "WH02"
     },
 
     user="nishant",
 
 )
-
 
 
 print()
@@ -48,10 +41,9 @@ record = runtime_crud_service.get(
 
     12,
 
-    6,
+    8
 
 )
-
 
 
 print()
