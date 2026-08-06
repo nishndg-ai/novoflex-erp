@@ -17,7 +17,6 @@ import {
 } from "@mui/icons-material";
 
 
-import { menuItems } from "../config/menu";
 import type { MenuItem } from "../config/menu";
 
 
@@ -25,6 +24,12 @@ import {
   loadModules,
   type RuntimeModule,
 } from "../services/moduleService";
+
+
+import {
+  loadMenuTree,
+  type RuntimeMenuItem,
+} from "../services/menuService";
 
 
 
@@ -107,18 +112,42 @@ export default function Sidebar() {
 
 
 
+  const [
+    runtimeMenus,
+    setRuntimeMenus,
+  ] = useState<RuntimeMenuItem[]>([]);
+
+
+
 
 
   useEffect(() => {
 
 
-    async function fetchRuntimeModules() {
+    async function loadSidebarData() {
 
 
       try {
 
 
-        const modules = await loadModules();
+        const menus =
+          await loadMenuTree();
+
+
+        console.log(
+          "BLUISH MENU TREE:",
+          menus
+        );
+
+
+        setRuntimeMenus(
+          menus
+        );
+
+
+
+        const modules =
+          await loadModules();
 
 
         setRuntimeModules(
@@ -126,11 +155,12 @@ export default function Sidebar() {
         );
 
 
-      } catch (error) {
+
+      } catch(error) {
 
 
         console.error(
-          "Failed to load runtime modules",
+          "Sidebar loading failed",
           error
         );
 
@@ -142,7 +172,7 @@ export default function Sidebar() {
 
 
 
-    fetchRuntimeModules();
+    loadSidebarData();
 
 
   }, []);
@@ -154,11 +184,11 @@ export default function Sidebar() {
 
 
   const toggleMenu = (
-    title: string
+    title:string
   ) => {
 
 
-    setOpenMenus((prev) => ({
+    setOpenMenus((prev)=>({
 
       ...prev,
 
@@ -176,19 +206,81 @@ export default function Sidebar() {
 
 
 
-  const runtimeMenuItems: MenuItem[] = runtimeModules.map(
+  /*
+     Convert BLUISH metadata menu
+     into existing Sidebar format
+  */
 
-    (module) => ({
+  const convertMetadataMenu = (
+    items: RuntimeMenuItem[]
+  ): MenuItem[] => {
 
-      title:
-        module.display_name,
 
-      path:
-        `/runtime/${module.module_code}`,
+    return items.map(
+      (item)=>({
 
-    })
+        title:
+          item.display_name,
 
-  );
+
+        path:
+          item.route
+          ??
+          undefined,
+
+
+        children:
+          item.children &&
+          item.children.length > 0
+
+            ?
+
+            convertMetadataMenu(
+              item.children
+            )
+
+            :
+
+            undefined,
+
+
+      })
+    );
+
+
+  };
+
+
+
+
+
+
+
+  const bluishMenuItems: MenuItem[] =
+    convertMetadataMenu(
+      runtimeMenus
+    );
+
+
+
+
+
+
+
+  const runtimeMenuItems: MenuItem[] =
+    runtimeModules.map(
+      (module)=>({
+
+        title:
+          module.display_name,
+
+
+        path:
+          `/runtime/${module.module_code}`,
+
+      })
+    );
+
 
 
 
@@ -198,7 +290,7 @@ export default function Sidebar() {
   const finalMenuItems: MenuItem[] = [
 
 
-    ...menuItems,
+    ...bluishMenuItems,
 
 
     {
@@ -214,9 +306,7 @@ export default function Sidebar() {
 
     },
 
-
   ];
-
 
 
 
@@ -234,15 +324,16 @@ export default function Sidebar() {
   ) => {
 
 
-    return items.map((item) => {
+    return items.map((item)=>{
 
 
-      const Icon = item.icon;
+      const Icon =
+        item.icon;
 
 
 
 
-      if (item.children) {
+      if(item.children){
 
 
         return (
@@ -255,13 +346,15 @@ export default function Sidebar() {
             <ListItemButton
 
               sx={
-                level === 0
-                  ? menuStyle
-                  : subMenuStyle(level)
+                level===0
+                ?
+                menuStyle
+                :
+                subMenuStyle(level)
               }
 
 
-              onClick={() =>
+              onClick={()=>
                 toggleMenu(
                   item.title
                 )
@@ -282,7 +375,6 @@ export default function Sidebar() {
 
 
 
-
               <ListItemText
 
                 primary={
@@ -293,16 +385,18 @@ export default function Sidebar() {
 
 
 
-
               {
                 openMenus[item.title]
 
-                  ? <ExpandLess />
+                ?
 
-                  : <ExpandMore />
+                <ExpandLess />
+
+                :
+
+                <ExpandMore />
 
               }
-
 
 
             </ListItemButton>
@@ -326,15 +420,10 @@ export default function Sidebar() {
 
 
                 {
-
                   renderMenu(
-
                     item.children,
-
-                    level + 1
-
+                    level+1
                   )
-
                 }
 
 
@@ -362,21 +451,24 @@ export default function Sidebar() {
 
         <ListItemButton
 
+
           key={item.title}
 
 
           sx={
-            level === 0
-              ? menuStyle
-              : subMenuStyle(level)
+            level===0
+            ?
+            menuStyle
+            :
+            subMenuStyle(level)
           }
 
 
 
-          onClick={() => {
+          onClick={()=>{
 
 
-            if(item.path) {
+            if(item.path){
 
 
               navigate(
@@ -393,7 +485,6 @@ export default function Sidebar() {
         >
 
 
-
           {Icon && (
 
             <ListItemIcon>
@@ -406,7 +497,6 @@ export default function Sidebar() {
 
 
 
-
           <ListItemText
 
             primary={
@@ -416,12 +506,9 @@ export default function Sidebar() {
           />
 
 
-
         </ListItemButton>
 
-
       );
-
 
 
     });
@@ -435,10 +522,7 @@ export default function Sidebar() {
 
 
 
-
-
   return (
-
 
     <List
 
@@ -447,9 +531,7 @@ export default function Sidebar() {
 
         bgcolor:"#0F172A",
 
-
         color:"#FFFFFF",
-
 
         height:
           "calc(100vh - 64px)",
@@ -457,26 +539,23 @@ export default function Sidebar() {
 
         overflowY:"auto",
 
-
         overflowX:"hidden",
 
 
         px:2,
 
-
         py:2,
 
 
 
-        "&::-webkit-scrollbar": {
+        "&::-webkit-scrollbar":{
 
           width:6,
 
         },
 
 
-
-        "&::-webkit-scrollbar-thumb": {
+        "&::-webkit-scrollbar-thumb":{
 
           backgroundColor:"#334155",
 
@@ -485,8 +564,7 @@ export default function Sidebar() {
         },
 
 
-
-        "&::-webkit-scrollbar-track": {
+        "&::-webkit-scrollbar-track":{
 
           backgroundColor:"#0F172A",
 
@@ -495,10 +573,7 @@ export default function Sidebar() {
 
       }}
 
-
     >
-
-
 
 
 
@@ -506,24 +581,17 @@ export default function Sidebar() {
 
         sx={{
 
-
           px:2,
-
 
           pb:2,
 
-
           color:"#94A3B8",
-
 
           fontSize:12,
 
-
           fontWeight:700,
 
-
           letterSpacing:1.5,
-
 
         }}
 
@@ -532,9 +600,6 @@ export default function Sidebar() {
         MAIN MENU
 
       </Typography>
-
-
-
 
 
 
@@ -548,19 +613,13 @@ export default function Sidebar() {
 
 
 
-
-
-
       <Divider
 
         sx={{
 
-
           mt:2,
 
-
           borderColor:"#1E293B",
-
 
         }}
 
@@ -568,12 +627,8 @@ export default function Sidebar() {
 
 
 
-
-
     </List>
 
-
   );
-
 
 }
