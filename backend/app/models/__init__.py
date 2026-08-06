@@ -21,6 +21,7 @@ from app.platform.metadata.models.metadata_permission import MetadataPermission
 from app.platform.metadata.models.metadata_dashboard import MetadataDashboard
 from app.platform.metadata.models.metadata_report import MetadataReport
 from app.platform.metadata.models.metadata_template import MetadataTemplate
+from app.platform.metadata.models.metadata_menu import MetadataMenu
 
 
 from app.platform.master_engine.models.master_history import MasterHistory
@@ -52,6 +53,7 @@ __all__ = [
 
 
     "MetadataModule",
+    "MetadataMenu",
 
     "MetadataField",
 
