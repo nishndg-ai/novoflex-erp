@@ -14,6 +14,11 @@ from app.platform.metadata.models.metadata_field import (
 )
 
 
+from app.platform.metadata.models.metadata_view_component import (
+    MetadataViewComponent,
+)
+
+
 from app.platform.metadata.models.metadata_menu import (
     MetadataMenu,
 )
@@ -21,6 +26,7 @@ from app.platform.metadata.models.metadata_menu import (
 
 from app.platform.metadata.enums import (
     ViewType,
+    ViewComponentType,
 )
 
 
@@ -47,6 +53,7 @@ class ModuleProvisioningService:
         - Permissions
         - Views
         - Default Fields
+        - View Components
         - Database Table
         - Menu
 
@@ -55,6 +62,7 @@ class ModuleProvisioningService:
         - Permissions
         - Views
         - User Fields
+        - View Components
         - Database Table
         - Menu
 
@@ -64,41 +72,26 @@ class ModuleProvisioningService:
 
     DEFAULT_ROLES = [
 
-
         {
             "role_name": "ADMIN",
-
             "can_view": True,
-
             "can_create": True,
-
             "can_edit": True,
-
             "can_delete": True,
-
             "can_export": True,
-
             "can_import": True,
-
             "can_approve": True,
         },
 
 
         {
             "role_name": "VIEWER",
-
             "can_view": True,
-
             "can_create": False,
-
             "can_edit": False,
-
             "can_delete": False,
-
             "can_export": False,
-
             "can_import": False,
-
             "can_approve": False,
         },
 
@@ -110,90 +103,53 @@ class ModuleProvisioningService:
 
     DEFAULT_FIELDS = [
 
-
         {
             "field_name": "code",
-
             "display_name": "Code",
-
             "data_type": "string",
-
             "control_type": "TEXTBOX",
-
             "length": 100,
-
             "is_required": True,
-
             "is_unique": True,
-
             "display_order": 1,
-
             "show_in_grid": True,
-
             "grid_order": 1,
-
             "is_sortable": True,
-
             "is_filterable": True,
-
             "is_searchable": True,
         },
 
 
         {
             "field_name": "name",
-
             "display_name": "Name",
-
             "data_type": "string",
-
             "control_type": "TEXTBOX",
-
             "length": 150,
-
             "is_required": True,
-
             "is_unique": False,
-
             "display_order": 2,
-
             "show_in_grid": True,
-
             "grid_order": 2,
-
             "is_sortable": True,
-
             "is_filterable": True,
-
             "is_searchable": True,
         },
 
 
         {
             "field_name": "description",
-
             "display_name": "Description",
-
             "data_type": "string",
-
             "control_type": "TEXTAREA",
-
             "length": 500,
-
             "is_required": False,
-
             "is_unique": False,
-
             "display_order": 3,
-
             "show_in_grid": True,
-
             "grid_order": 3,
-
             "is_sortable": False,
-
             "is_filterable": False,
-
             "is_searchable": True,
         },
 
@@ -203,29 +159,19 @@ class ModuleProvisioningService:
 
 
 
-    # =====================================================
-    # PERMISSIONS
-    # =====================================================
-
-
     def provision_permissions(
         self,
         db: Session,
         module_id: int,
     ):
 
-
         for role in self.DEFAULT_ROLES:
-
 
             db.add(
 
                 MetadataPermission(
-
                     module_id=module_id,
-
                     **role,
-
                 )
 
             )
@@ -233,10 +179,6 @@ class ModuleProvisioningService:
 
 
 
-
-    # =====================================================
-    # VIEWS
-    # =====================================================
 
 
     def provision_views(
@@ -250,63 +192,37 @@ class ModuleProvisioningService:
 
         views = [
 
-
             MetadataView(
-
                 module_id=module_id,
-
                 view_code=f"{module_code}_list",
-
                 display_name=f"{module_name} List",
-
                 description="Default grid view",
-
                 view_type=ViewType.GRID,
-
                 page_size=25,
-
                 is_default=True,
-
             ),
 
 
-
             MetadataView(
-
                 module_id=module_id,
-
                 view_code=f"{module_code}_form",
-
                 display_name=f"{module_name} Form",
-
                 description="Default create/edit form",
-
                 view_type=ViewType.FORM,
-
                 page_size=1,
-
             ),
 
 
-
             MetadataView(
-
                 module_id=module_id,
-
                 view_code=f"{module_code}_detail",
-
                 display_name=f"{module_name} Detail",
-
                 description="Default detail view",
-
                 view_type=ViewType.DETAIL,
-
                 page_size=1,
-
             ),
 
         ]
-
 
 
         for view in views:
@@ -318,30 +234,19 @@ class ModuleProvisioningService:
 
 
 
-
-    # =====================================================
-    # DEFAULT FIELDS
-    # =====================================================
-
-
     def provision_default_fields(
         self,
         db: Session,
         module_id: int,
     ):
 
-
         for field in self.DEFAULT_FIELDS:
-
 
             db.add(
 
                 MetadataField(
-
                     module_id=module_id,
-
                     **field,
-
                 )
 
             )
@@ -351,10 +256,98 @@ class ModuleProvisioningService:
 
 
 
+    # =====================================================
+    # AUTO FORM COMPONENT GENERATION
+    # =====================================================
 
-    # =====================================================
-    # DATABASE SCHEMA
-    # =====================================================
+    def provision_view_components(
+        self,
+        db: Session,
+        module_id: int,
+    ):
+
+
+        form_view = (
+
+            db.query(MetadataView)
+
+            .filter(
+                MetadataView.module_id == module_id,
+                MetadataView.view_type == ViewType.FORM,
+            )
+
+            .first()
+
+        )
+
+
+        if not form_view:
+
+            return
+
+
+
+        fields = (
+
+            db.query(MetadataField)
+
+            .filter(
+                MetadataField.module_id == module_id,
+                MetadataField.is_active.is_(True),
+            )
+
+            .order_by(
+                MetadataField.display_order
+            )
+
+            .all()
+
+        )
+
+
+
+        for field in fields:
+
+
+            component = MetadataViewComponent(
+
+                view_id=form_view.id,
+
+                field_id=field.id,
+
+                component_type=ViewComponentType.FIELD,
+
+                component_name=field.field_name,
+
+                display_name=field.display_name,
+
+                display_order=field.display_order,
+
+                row_no=field.display_order,
+
+                column_no=1,
+
+                column_span=1,
+
+                is_visible=True,
+
+                is_readonly=False,
+
+                properties={
+
+                    "control_type":
+                        field.control_type
+
+                },
+
+            )
+
+
+            db.add(component)
+
+
+
+
 
 
     def provision_schema(
@@ -363,9 +356,7 @@ class ModuleProvisioningService:
         module_id: int,
     ):
 
-
         generator = SchemaGenerator(db)
-
 
         return generator.generate_table(
             module_id
@@ -375,11 +366,6 @@ class ModuleProvisioningService:
 
 
 
-
-
-    # =====================================================
-    # MENU PROVISIONING
-    # =====================================================
 
 
     def provision_menu(
@@ -430,11 +416,6 @@ class ModuleProvisioningService:
 
 
 
-    # =====================================================
-    # MAIN PROVISION METHOD
-    # =====================================================
-
-
     def provision_module(
         self,
         db: Session,
@@ -469,7 +450,6 @@ class ModuleProvisioningService:
 
         if mode == "STANDARD":
 
-
             self.provision_default_fields(
 
                 db,
@@ -486,7 +466,6 @@ class ModuleProvisioningService:
 
         else:
 
-
             raise ValueError(
 
                 f"Invalid provisioning mode: {mode}"
@@ -495,8 +474,19 @@ class ModuleProvisioningService:
 
 
 
-
         db.flush()
+
+
+
+        # CREATE FORM CONTROLS
+
+        self.provision_view_components(
+
+            db,
+
+            module.id,
+
+        )
 
 
 
@@ -509,8 +499,6 @@ class ModuleProvisioningService:
         )
 
 
-
-        # BLUISH AUTO MENU CREATION
 
         self.provision_menu(
 
